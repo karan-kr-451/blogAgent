@@ -1,0 +1,31 @@
+services:
+  # Backend API
+  - type: web
+    name: blog-agent-api
+    runtime: python
+    buildCommand: ./render-build.sh
+    startCommand: ./start.sh
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: PORT
+        value: 10000
+      - key: LOCAL_DRAFTS_DIR
+        value: /data/drafts
+      - key: MEMORY_INDEX_PATH
+        value: /data/memory/vectors.index
+      - key: MEMORY_METADATA_PATH
+        value: /data/memory/metadata.json
+    disk:
+      name: blog-data
+      mountPath: /data
+      sizeGB: 1
+
+  # Frontend Dashboard
+  - type: static
+    name: blog-agent-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    publishPath: frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false # Set this to your blog-agent-api URL in Render dashboard
