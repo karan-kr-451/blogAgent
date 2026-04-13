@@ -21,13 +21,16 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-*.egg-info/
 MANIFEST
 
-.kiro
-.hypothesis
-.qwen
-
+# ============================================
+# Meta Directories & Agent Data
+# ============================================
+.kiro/
+.qwen/
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
 
 # ============================================
 # Virtual Environments
@@ -37,8 +40,6 @@ venv/
 .venv*/
 env/
 ENV/
-env.bak/
-venv.bak/
 
 # ============================================
 # Environment Variables & Secrets
@@ -57,151 +58,26 @@ venv.bak/
 *.swp
 *.swo
 *~
-*.sublime-project
-*.sublime-workspace
 .cache/
-.project
-.settings/
-.classpath
 
 # ============================================
-# Testing & Coverage
-# ============================================
-.pytest_cache/
-.coverage
-.coverage.*
-htmlcov/
-.tox/
-.hypothesis/
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-test-results/
-pytest-results/
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# ============================================
-# Logs & Debugging
+# Logs & Database
 # ============================================
 *.log
 logs/
-*.log.*
-logs/screenshots/
-
-# ============================================
-# Memory System & AI Models
-# ============================================
 memory/
+*.sqlite
+*.sqlite3
+*.db
 *.index
 *.faiss
-*.bin
-models/
-*.pt
-*.pth
-*.onnx
 
 # ============================================
-# Generated Content
+# Generated Content & Drafts
 # ============================================
 drafts/
 output/
 generated/
-
-# ============================================
-# Playwright & Browser Testing
-# ============================================
-.playwright/
-playwright-report/
-blob-report/
-playwright/.cache/
-browser-install/
-
-# ============================================
-# OS Files
-# ============================================
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-Thumbs.db:encryptable
-desktop.ini
-
-# ============================================
-# Windows
-# ============================================
-*.exe
-*.msi
-*.dll
-python-*.exe
-*.iso
-
-# ============================================
-# Node Modules (Frontend)
-# ============================================
-frontend/node_modules/
-frontend/dist/
-frontend/build/
-frontend/.vite/
-
-# ============================================
-# Temporary Files
-# ============================================
-*.tmp
-*.temp
-*.bak
-*.cache
-*.swp
-*~
-.cache/
-.temp/
-tmp/
-temp/
-
-# ============================================
-# Jupyter Notebooks
-# ============================================
-.ipynb_checkpoints
-*.ipynb
-
-# ============================================
-# Database Files
-# ============================================
-*.sqlite
-*.sqlite3
-*.db
-
-# ============================================
-# Docker
-# ============================================
-docker-compose.override.yml
-
-# ============================================
-# Build Artifacts
-# ============================================
-*.wheel
-*.whl
-*.tar.gz
-*.zip
-*.rar
-
-# ============================================
-# Documentation Build
-# ============================================
-docs/_build/
-site/
-
-# ============================================
-# Development Tools
-# ============================================
-.grype.yaml
-.trivyignore
-.secrets.baseline
 
 # ============================================
 # Media & Assets
@@ -217,4 +93,18 @@ site/
 *.mov
 *.pdf
 dashboard_user.png
-python-3.12.exe
+python-*.exe
+*.exe
+
+# ============================================
+# Root Markdown Files (Ignore all except README)
+# ============================================
+/*.md
+!/README.md
+
+# ============================================
+# Frontend (if applicable)
+# ============================================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
