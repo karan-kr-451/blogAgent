@@ -37,9 +37,11 @@ def cli(ctx, log_level, log_format, log_file):
     setup_logging(log_level=log_level, log_format=log_format, log_file=log_file)
 
 
+import os
+
 @cli.command()
 @click.option('--host', default='0.0.0.0', help='API server host')
-@click.option('--port', default=8000, type=int, help='API server port')
+@click.option('--port', default=int(os.environ.get("PORT", 8000)), type=int, help='API server port')
 @click.option('--reload', is_flag=True, help='Enable auto-reload for development')
 @click.pass_context
 def run_server(ctx, host, port, reload):
