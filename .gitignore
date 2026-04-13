@@ -24,6 +24,11 @@ wheels/
 *.egg-info/
 MANIFEST
 
+.kiro
+.hypothesis
+.qwen
+
+
 # ============================================
 # Virtual Environments
 # ============================================
