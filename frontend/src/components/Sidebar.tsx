@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getPipelineStatus, getStats, triggerPipeline, type PipelineStatus, type SystemStats } from '../services/api'
+import { getPipelineStatus, getStats, triggerPipeline, getDrafts, type PipelineStatus, type SystemStats } from '../services/api'
 import PipelineFlow from './PipelineFlow'
 
 export default function Sidebar() {
@@ -18,14 +18,14 @@ export default function Sidebar() {
 
   const loadData = async () => {
     try {
-      const [statsData, statusData, draftsRes] = await Promise.all([
+      const [statsData, statusData, draftsData] = await Promise.all([
         getStats(),
         getPipelineStatus(),
-        fetch('http://127.0.0.1:8000/drafts').then(r => r.json()),
+        getDrafts(),
       ])
       setStats(statsData)
       setPipeline(statusData)
-      setPostCount(Array.isArray(draftsRes) ? draftsRes.length : 0)
+      setPostCount(Array.isArray(draftsData) ? draftsData.length : 0)
       setIsOnline(true)
       setLastPoll(new Date())
     } catch {

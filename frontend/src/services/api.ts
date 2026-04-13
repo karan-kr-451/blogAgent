@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE = 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 export interface BlogPost {
   id: string
@@ -33,9 +33,12 @@ const api = axios.create({
   timeout: 10000,
 })
 
+export const getDrafts = async (): Promise<BlogPost[]> => {
+  const response = await api.get('/drafts')
+  return response.data
+}
+
 export const getBlogPosts = async (): Promise<BlogPost[]> => {
-  // For now, we'll parse the drafts directory
-  // In production, you'd have an endpoint to list drafts
   const response = await api.get('/history')
   return response.data
 }

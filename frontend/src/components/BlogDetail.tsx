@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import MermaidDiagram from './MermaidDiagram'
+import { getDrafts } from '../services/api'
 
 interface BlogPost {
   id: string
@@ -71,10 +72,7 @@ export default function BlogDetail() {
 
     try {
       console.log("Fetching drafts from API...");
-      const res    = await fetch('http://127.0.0.1:8000/drafts')
-      if (!res.ok) throw new Error(`API returned ${res.status}: ${res.statusText}`)
-      
-      const drafts = await res.json()
+      const drafts = await getDrafts()
       console.log("Fetched drafts count:", drafts?.length);
       
       const found  = drafts.find((d: BlogPost) => {

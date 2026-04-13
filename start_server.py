@@ -1,7 +1,4 @@
-"""
-Start the API server with correct Windows event loop policy.
-Usage: python start_server.py
-"""
+import os
 import sys
 
 # MUST be before ANY imports that create event loops
@@ -17,14 +14,21 @@ def main():
     print("=" * 70)
     print(f"Python: {sys.version}")
     print(f"Platform: {sys.platform}")
-    print(f"Event Loop Policy: {asyncio.get_event_loop_policy().__class__.__name__}")
+    if sys.platform == 'win32':
+        import asyncio
+        print(f"Event Loop Policy: {asyncio.get_event_loop_policy().__class__.__name__}")
     print("=" * 70)
     print()
     
+    # Get port from environment (Render sets this)
+    port = int(os.environ.get("PORT", 8000))
+    # Host must be 0.0.0.0 for Render
+    host = "0.0.0.0"
+    
     uvicorn.run(
         "src.api.server:app",
-        host="127.0.0.1",
-        port=8000,
+        host=host,
+        port=port,
         log_level="info",
     )
 

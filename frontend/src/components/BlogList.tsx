@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { getPipelineStatus, type PipelineStatus } from '../services/api'
+import { getPipelineStatus, getDrafts, type PipelineStatus } from '../services/api'
 
 interface BlogFile {
   id: string
@@ -100,8 +100,7 @@ export default function BlogList() {
 
   const loadBlogs = async () => {
     try {
-      const res  = await fetch('http://127.0.0.1:8000/drafts')
-      const data = await res.json()
+      const data = await getDrafts()
       if (Array.isArray(data)) setBlogs(data)
     } catch {}
   }
