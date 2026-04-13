@@ -52,7 +52,7 @@ class MemorySystem:
             return
             
         self.config = config or get_config()
-        self.embedding_dimension = 384  # all-MiniLM-L6-v2 dimension
+        self.embedding_dimension = 384  # paraphrase-MiniLM-L3-v2 dimension
         self.index: faiss.Index | None = None
         self.metadata: dict[str, Any] = {
             "entries": [],
@@ -89,11 +89,11 @@ class MemorySystem:
         # Load embedding model (shared across instances)
         if MemorySystem._model_cache is None:
             import asyncio
-            logger.info("Loading embedding model: all-MiniLM-L6-v2", extra={"agent": "MemorySystem"})
+            logger.info("Loading embedding model: paraphrase-MiniLM-L3-v2", extra={"agent": "MemorySystem"})
             loop = asyncio.get_event_loop()
             # Use factory method to avoid multiple simultaneous loads if called concurrently
             MemorySystem._model_cache = await loop.run_in_executor(
-                None, lambda: SentenceTransformer('all-MiniLM-L6-v2')
+                None, lambda: SentenceTransformer('paraphrase-MiniLM-L3-v2')
             )
             logger.info("Embedding model loaded successfully", extra={"agent": "MemorySystem"})
         
