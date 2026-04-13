@@ -202,3 +202,19 @@ site/
 .grype.yaml
 .trivyignore
 .secrets.baseline
+
+# ============================================
+# Media & Assets
+# ============================================
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.webp
+*.mp4
+*.webm
+*.mov
+*.pdf
+dashboard_user.png
+python-3.12.exe
