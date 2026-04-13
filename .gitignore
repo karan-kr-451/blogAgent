@@ -65,7 +65,6 @@ ENV/
 # ============================================
 *.log
 logs/
-memory/
 *.sqlite
 *.sqlite3
 *.db
@@ -75,7 +74,6 @@ memory/
 # ============================================
 # Generated Content & Drafts
 # ============================================
-drafts/
 output/
 generated/
 

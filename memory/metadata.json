@@ -1,0 +1,105 @@
+{
+  "entries": [
+    {
+      "content_id": "5768a1f0-a232-4f58-988d-36ae804b5e71",
+      "metadata": {
+        "title": "Test",
+        "url": "https://example.com/test",
+        "processed_at": "2026-04-10T17:13:52.631512"
+      }
+    },
+    {
+      "content_id": "b8bd872f-4b69-475e-8909-dd0a5a338f7b",
+      "metadata": {
+        "title": "Test",
+        "url": "https://example.com/test",
+        "processed_at": "2026-04-10T17:13:59.998405"
+      }
+    },
+    {
+      "content_id": "4fb00371-a4e6-4148-a365-e5d35aed0d64",
+      "metadata": {
+        "title": "Test",
+        "url": "https://example.com/test",
+        "processed_at": "2026-04-10T17:14:06.240129"
+      }
+    },
+    {
+      "content_id": "aa737e0c-a9e9-4edc-8389-4243189c0eb3",
+      "metadata": {
+        "title": "Test",
+        "url": "https://example.com/test",
+        "processed_at": "2026-04-10T17:14:13.000134"
+      }
+    },
+    {
+      "content_id": "6daa3a24-64b8-4acb-a7b6-9f8403f1a4b0",
+      "metadata": {
+        "title": "Newsletter sponsorships",
+        "url": "https://blog.bytebytego.com/p/newsletter-sponsorships-471",
+        "processed_at": "2026-04-10T19:17:52.026299"
+      }
+    },
+    {
+      "content_id": "4ef8bdd2-e9a0-445d-82d6-06a525dd9b74",
+      "metadata": {
+        "title": "System Design PDFs",
+        "url": "https://blog.bytebytego.com/p/free-system-design-pdf-158-pages",
+        "processed_at": "2026-04-10T19:19:46.001672"
+      }
+    },
+    {
+      "content_id": "d86a260b-8be3-4968-8d1f-f21383fd9331",
+      "metadata": {
+        "title": "System Design · Coding · Behavioral · Machine Learning Interviews",
+        "url": "https://bytebytego.com/courses/machine-learning-system-design-interview/youtube-video-search",
+        "processed_at": "2026-04-10T19:31:48.038687"
+      }
+    },
+    {
+      "content_id": "e216ccbb-986b-43af-a94a-a9a7b7e54d81",
+      "metadata": {
+        "title": "Spotify System Design: Music-Recommendation, Playlists, Streaming, Personalization",
+        "url": "https://engineering.atspotify.com/",
+        "processed_at": "2026-04-10T19:46:12.949407"
+      }
+    },
+    {
+      "content_id": "cf72746a-4cf6-4dc1-9ad1-20bc19344d1c",
+      "metadata": {
+        "title": "Amazon System Design: E-Commerce, Dynamodb, S3, Lambda",
+        "url": "https://aws.amazon.com/blogs/architecture/",
+        "processed_at": "2026-04-10T19:48:05.900669"
+      }
+    },
+    {
+      "content_id": "35d086b2-91d7-4600-9050-b3af20e20f1e",
+      "metadata": {
+        "title": "5 ways GitLab pipeline logic solves engineering problems",
+        "url": "https://about.gitlab.com/blog/engineering/",
+        "processed_at": "2026-04-10T20:40:46.712223"
+      }
+    },
+    {
+      "content_id": "165d5860-738d-4f9a-b516-2fb13eb82000",
+      "metadata": {
+        "title": "Telegram's Encrypted-Messaging Architecture",
+        "url": "https://telegram.org/blog",
+        "processed_at": "2026-04-11T13:37:38.923080"
+      }
+    },
+    {
+      "content_id": "d343e79b-308b-4c66-9834-eb034fcee4a9",
+      "metadata": {
+        "title": "Twitch's Live-Streaming Architecture",
+        "url": "https://blog.twitch.tv/en/",
+        "processed_at": "2026-04-11T13:48:32.118648"
+      }
+    }
+  ],
+  "stats": {
+    "total_processed": 12,
+    "duplicates_detected": 0,
+    "last_publication": "2026-04-13T17:04:13.431750"
+  }
+}
