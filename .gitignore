@@ -101,6 +101,13 @@ python-*.exe
 !/README.md
 
 # ============================================
+# Persistence Exceptions (Allow tracking these)
+# ============================================
+!memory/*.index
+!drafts/images/
+!drafts/images/**/*
+
+# ============================================
 # Frontend (if applicable)
 # ============================================
 frontend/node_modules/
