@@ -62,6 +62,7 @@ class SystemStatsResponse(BaseModel):
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str
+    model_ready: bool
     timestamp: datetime
     version: str
 
@@ -76,13 +77,11 @@ _pipeline_status = {
     "last_run": None
 }
 _memory_system = None
+_memory_system_ready = False
 
 
 def get_memory_system():
-    """Get or create the global memory system instance."""
-    global _memory_system
-    if _memory_system is None:
-        _memory_system = MemorySystem()
+    """Get the global memory system instance (initialized in lifespan)."""
     return _memory_system
 
 
@@ -90,8 +89,6 @@ def get_memory_system():
 async def lifespan(app: FastAPI):
     """Application lifespan for startup and shutdown."""
     # Startup
-    # CRITICAL: Re-set event loop policy in the actual event loop context
-    # This is needed because uvicorn may have created its own loop before our policy was set
     if sys.platform == 'win32':
         import asyncio
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -106,12 +103,27 @@ async def lifespan(app: FastAPI):
 
     logger.info("Starting Autonomous Blog Agent API", extra={"agent": "API"})
 
-    # Initialize memory system
-    memory = get_memory_system()
-    await memory.initialize()
-    logger.info("Memory system initialized", extra={"agent": "API"})
+    # Launch memory system initialization in the background
+    async def init_memory_background():
+        global _memory_system, _memory_system_ready
+        try:
+            logger.info("Loading memory system in background...", extra={"agent": "API"})
+            # Instantiate immediately
+            _memory_system = MemorySystem()
+            # Initialize (this loads the heavy sentence-transformers model)
+            await _memory_system.initialize()
+            _memory_system_ready = True
+            logger.info("Memory system ready", extra={"agent": "API"})
+        except Exception as e:
+            logger.error(f"Memory system failed to load: {e}", extra={"agent": "API"})
+
+    # Create background task so lifespan can complete (and port can open) immediately
+    asyncio.create_task(init_memory_background())
 
     yield
+
+    # Shutdown
+    logger.info("Shutting down Autonomous Blog Agent API", extra={"agent": "API"})
 
     # Shutdown
     logger.info("Shutting down Autonomous Blog Agent API", extra={"agent": "API"})
@@ -140,6 +152,7 @@ async def health_check():
     """Health check endpoint."""
     return HealthResponse(
         status="healthy",
+        model_ready=_memory_system_ready,
         timestamp=datetime.utcnow(),
         version="0.1.0"
     )
@@ -280,9 +293,11 @@ async def get_pipeline_status():
 @app.get("/history")
 async def get_history(limit: int = 50):
     """Get processing history."""
+    if not _memory_system_ready:
+        return [] # Return empty instead of error for smoother dashboard load
+        
     try:
         memory = get_memory_system()
-        # No need to await initialize() here if already initialized in lifespan
         history = await memory.get_history(limit=limit)
         
         return [
@@ -301,6 +316,14 @@ async def get_history(limit: int = 50):
 @app.get("/stats", response_model=SystemStatsResponse)
 async def get_stats():
     """Get system statistics."""
+    if not _memory_system_ready:
+        return SystemStatsResponse(
+            total_processed=0,
+            duplicates_detected=0,
+            last_publication=None,
+            success_rate=0.0
+        )
+        
     try:
         memory = get_memory_system()
         stats = await memory.get_stats()
