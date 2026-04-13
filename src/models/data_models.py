@@ -48,13 +48,13 @@ class PageState:
 class ContentItem:
     """Structured content extracted from a web page."""
     title: str
-    author: str | None
-    publication_date: datetime | None
-    url: str
-    text_content: str
-    code_blocks: list[str]
-    images: list[str]
-    metadata: dict[str, Any]
+    author: str | None = None
+    publication_date: datetime | None = None
+    url: str = ""
+    text_content: str = ""
+    code_blocks: list[str] = field(default_factory=list)
+    images: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
     
     def to_json(self) -> dict[str, Any]:
         """Serialize ContentItem to JSON-compatible dict."""
@@ -77,11 +77,11 @@ class ContentItem:
 class BlogPost:
     """Generated blog post with metadata."""
     title: str
-    content: str  # Markdown format
-    tags: list[str]
-    word_count: int
-    source_url: str
-    generated_at: datetime
+    content: str = ""
+    tags: list[str] = field(default_factory=list)
+    word_count: int = 0
+    source_url: str = ""
+    generated_at: datetime = field(default_factory=datetime.utcnow)
     metadata: dict[str, Any] = field(default_factory=dict)
     
     def to_markdown(self) -> str:
