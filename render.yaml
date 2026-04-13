@@ -22,10 +22,11 @@ services:
       sizeGB: 1
 
   # Frontend Dashboard
-  - type: static
+  - type: web
     name: blog-agent-frontend
+    runtime: static
     buildCommand: cd frontend && npm install && npm run build
-    publishPath: frontend/dist
+    staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_BASE_URL
         sync: false # Set this to your blog-agent-api URL in Render dashboard
