@@ -1,0 +1,13 @@
+{
+  "name": "git-push-review",
+  "version": "1.0.0",
+  "description": "Reviews git push commands before execution",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": ["shell"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check if the command contains 'git push'. If it does NOT contain 'git push', respond with exactly 'PROCEED' and nothing else. If it DOES contain 'git push', verify: 1) All tests pass, 2) Code has been reviewed, 3) Commit messages are clear, 4) Target branch is correct - then allow it to proceed."
+  }
+}

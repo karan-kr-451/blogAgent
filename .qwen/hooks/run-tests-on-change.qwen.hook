@@ -1,0 +1,15 @@
+{
+  "name": "run-tests-on-change",
+  "version": "1.0.0",
+  "enabled": true,
+  "description": "Automatically run relevant tests after Python file changes in BlogAgent",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": ["write", "edit"],
+    "filePatterns": ["**/*.py"]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "cmd /c \"pytest tests/ -v --tb=short\""
+  }
+}

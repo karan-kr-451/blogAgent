@@ -1,0 +1,199 @@
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+*.egg-info/
+MANIFEST
+
+# ============================================
+# Virtual Environments
+# ============================================
+venv/
+.venv/
+.venv*/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ============================================
+# Environment Variables & Secrets
+# ============================================
+.env
+.env.local
+.env.*.local
+*.secret
+*.key
+
+# ============================================
+# IDE & Editors
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.cache/
+.project
+.settings/
+.classpath
+
+# ============================================
+# Testing & Coverage
+# ============================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+test-results/
+pytest-results/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ============================================
+# Logs & Debugging
+# ============================================
+*.log
+logs/
+*.log.*
+logs/screenshots/
+
+# ============================================
+# Memory System & AI Models
+# ============================================
+memory/
+*.index
+*.faiss
+*.bin
+models/
+*.pt
+*.pth
+*.onnx
+
+# ============================================
+# Generated Content
+# ============================================
+drafts/
+output/
+generated/
+
+# ============================================
+# Playwright & Browser Testing
+# ============================================
+.playwright/
+playwright-report/
+blob-report/
+playwright/.cache/
+browser-install/
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Thumbs.db:encryptable
+desktop.ini
+
+# ============================================
+# Windows
+# ============================================
+*.exe
+*.msi
+*.dll
+python-*.exe
+*.iso
+
+# ============================================
+# Node Modules (Frontend)
+# ============================================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.cache
+*.swp
+*~
+.cache/
+.temp/
+tmp/
+temp/
+
+# ============================================
+# Jupyter Notebooks
+# ============================================
+.ipynb_checkpoints
+*.ipynb
+
+# ============================================
+# Database Files
+# ============================================
+*.sqlite
+*.sqlite3
+*.db
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+
+# ============================================
+# Build Artifacts
+# ============================================
+*.wheel
+*.whl
+*.tar.gz
+*.zip
+*.rar
+
+# ============================================
+# Documentation Build
+# ============================================
+docs/_build/
+site/
+
+# ============================================
+# Development Tools
+# ============================================
+.grype.yaml
+.trivyignore
+.secrets.baseline

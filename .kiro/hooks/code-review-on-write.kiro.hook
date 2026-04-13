@@ -1,0 +1,14 @@
+{
+  "name": "code-review-on-write",
+  "version": "1.0.0",
+  "enabled": true,
+  "description": "Performs a quick code review after write operations to catch common issues in BlogAgent Python code",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": ["write"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Python code was just written or modified in the BlogAgent project. Perform a quick review checking for: 1) API key security (never hardcoded or logged), 2) Async/await correctness (no blocking calls), 3) Error handling and retry logic, 4) Type hints on public functions, 5) Protocol interfaces for agents, 6) Data model completeness. Only comment if you find issues worth addressing."
+  }
+}

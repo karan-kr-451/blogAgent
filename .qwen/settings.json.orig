@@ -1,0 +1,194 @@
+{
+  "project": {
+    "name": "BlogAgent - Autonomous Blog Content Agent",
+    "type": "multi-agent-ai-system",
+    "language": "python",
+    "version": "1.0.0",
+    "description": "Autonomous multi-agent system that discovers, processes, and publishes original blog content using Playwright, LangGraph, FAISS, and Gemma/Ollama"
+  },
+  "context": {
+    "loadOnSessionStart": [
+      ".qwen/PROJECT_CONTEXT.md",
+      ".qwen/specs/project-info.md",
+      ".qwen/specs/autonomous-blog-agent/requirements.md",
+      ".qwen/specs/autonomous-blog-agent/design.md",
+      ".qwen/specs/autonomous-blog-agent/tasks.md"
+    ]
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "disabled": false,
+      "autoApprove": ["resolve-library-id", "get-library-docs"],
+      "description": "Live docs for 7000+ libraries. Essential for FastAPI, LangGraph, Playwright, FAISS, Ollama documentation."
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "disabled": false,
+      "autoApprove": ["sequentialthinking"],
+      "description": "Structured step-by-step reasoning for complex problems, architecture decisions, and pipeline flow design."
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "disabled": false,
+      "autoApprove": [],
+      "description": "Browser automation for Crawler_Agent - scraping, E2E testing, navigation."
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "disabled": false,
+      "autoApprove": ["create_entities", "create_relations", "add_observations", "read_graph", "search_nodes", "open_nodes"],
+      "description": "Persistent memory across sessions via knowledge graph for project context and pipeline history."
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "e:\\\\blogAgent"],
+      "disabled": false,
+      "autoApprove": ["read_file", "read_multiple_files", "list_directory", "directory_tree", "search_files", "get_file_info"],
+      "description": "File system access for BlogAgent project directory."
+    },
+    "duckduckgo": {
+      "command": "npx",
+      "args": ["-y", "duckduckgo-mcp-server"],
+      "disabled": false,
+      "autoApprove": ["search", "fetch_content"],
+      "description": "Web search for research and current information about FastAPI, LangGraph, FAISS, Ollama."
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "disabled": false,
+      "autoApprove": ["fetch"],
+      "description": "Fetch URLs and convert to markdown for reading docs and web pages."
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_PAT_HERE"
+      },
+      "disabled": true,
+      "autoApprove": [],
+      "description": "GitHub repos, PRs, issues, commits. Requires PAT token."
+    }
+  },
+  "agents": {
+    "enabled": true,
+    "directory": ".qwen/agents",
+    "available": [
+      "architect",
+      "planner",
+      "python-reviewer",
+      "tdd-guide",
+      "code-reviewer",
+      "build-error-resolver",
+      "database-reviewer",
+      "dependency-resolver",
+      "doc-updater",
+      "e2e-runner",
+      "security-reviewer",
+      "refactor-cleaner"
+    ]
+  },
+  "hooks": {
+    "enabled": true,
+    "directory": ".qwen/hooks",
+    "available": [
+      "quality-gate",
+      "code-review-on-write",
+      "run-tests-on-change",
+      "auto-format",
+      "typecheck-on-edit",
+      "tdd-reminder"
+    ]
+  },
+  "skills": {
+    "enabled": true,
+    "directory": ".qwen/skills",
+    "available": [
+      "dependency-management"
+    ]
+  },
+  "steering": {
+    "enabled": true,
+    "directory": ".qwen/steering",
+    "available": [
+      "coding-style",
+      "python-patterns",
+      "testing",
+      "security",
+      "development-workflow",
+      "git-workflow",
+      "patterns",
+      "performance",
+      "review-mode"
+    ]
+  },
+  "specs": {
+    "enabled": true,
+    "directory": ".qwen/specs",
+    "projectInfo": ".qwen/specs/project-info.md",
+    "requirements": ".qwen/specs/autonomous-blog-agent/requirements.md",
+    "design": ".qwen/specs/autonomous-blog-agent/design.md",
+    "tasks": ".qwen/specs/autonomous-blog-agent/tasks.md"
+  },
+  "development": {
+    "pythonVersion": "3.11+",
+    "framework": "FastAPI + LangGraph",
+    "llm": "Gemma via Ollama",
+    "vectorDB": "FAISS (384 dimensions)",
+    "testing": "pytest + Hypothesis",
+    "linting": ["ruff", "mypy", "black", "bandit"],
+    "testCoverage": 80,
+    "correctnessProperties": 20
+  },
+  "constraints": {
+    "agents": ["Crawler", "Extractor", "Writer", "Editor", "Reviewer", "Publisher"],
+    "asyncAwait": true,
+    "retryLogic": {
+      "maxAttempts": 3,
+      "baseDelay": 1,
+      "pattern": "exponential_backoff"
+    },
+    "ollamaRetry": {
+      "maxAttempts": 5
+    },
+    "regeneration": {
+      "maxAttempts": 2
+    },
+    "publicationRate": "1 post per 24 hours",
+    "duplicateThreshold": 0.85,
+    "reviewThreshold": 0.70,
+    "wordCount": {
+      "min": 800,
+      "max": 1500
+    }
+  },
+  "environment": {
+    "required": [
+      "MEDIUM_API_TOKEN",
+      "OLLAMA_ENDPOINT",
+      "OLLAMA_MODEL"
+    ],
+    "optional": [
+      "SCHEDULE_TIME",
+      "MAX_ARTICLES_PER_RUN",
+      "LOG_LEVEL"
+    ]
+  },
+  "qualityGate": {
+    "command": "ruff check src/ && mypy src/ && black --check src/ && pytest --cov=src --cov-report=term-missing -v",
+    "steps": [
+      "ruff check src/",
+      "mypy src/",
+      "black --check src/",
+      "pytest --cov=src --cov-report=term-missing",
+      "bandit -r src/"
+    ]
+  }
+}
+
