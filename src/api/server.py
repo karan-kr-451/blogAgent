@@ -90,7 +90,6 @@ async def lifespan(app: FastAPI):
     """Application lifespan for startup and shutdown."""
     # Startup
     if sys.platform == 'win32':
-        import asyncio
         asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         logger.info("WindowsProactorEventLoopPolicy set in lifespan", extra={"agent": "API"})
     
@@ -121,9 +120,6 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(init_memory_background())
 
     yield
-
-    # Shutdown
-    logger.info("Shutting down Autonomous Blog Agent API", extra={"agent": "API"})
 
     # Shutdown
     logger.info("Shutting down Autonomous Blog Agent API", extra={"agent": "API"})
