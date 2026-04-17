@@ -43,6 +43,7 @@ def _build_user_prompt(
     article_excerpt: str,
     comment_text: str,
     commenter_name: str,
+    technical_context: str = "",
 ) -> str:
     """Build the user-turn prompt for Ollama."""
     return f"""\
@@ -59,6 +60,11 @@ COMMENTER: {commenter_name}
 THEIR COMMENT:
 \"\"\"
 {comment_text}
+\"\"\"
+
+TECHNICAL CONTEXT (related info from knowledge base):
+\"\"\"
+{technical_context or "No specific technical context found in memory."}
 \"\"\"
 
 ---
@@ -348,11 +354,24 @@ class CommentResponderAgent:
         # Trim article body to keep the request within a sensible token budget
         article_excerpt = article_body[:2000].strip()
 
+        # 1. Retrieve technical context from the knowledge base (crawled data, past blogs)
+        context_entries = await self.memory_system.search(comment_text, limit=3)
+        technical_context = ""
+        if context_entries:
+            context_blocks = []
+            for entry in context_entries:
+                title = entry.get("content", {}).get("title", "Untitled")
+                snippet = entry.get("content", {}).get("summary", "") or entry.get("content", {}).get("body", "")[:500]
+                context_blocks.append(f"Source: {title}\nContent: {snippet}")
+            technical_context = "\n\n".join(context_blocks)
+
+        # 2. Build the full prompt with retrieved context
         prompt = f"{SYSTEM_PROMPT}\n\n" + _build_user_prompt(
             article_title=article_title,
             article_excerpt=article_excerpt,
             comment_text=comment_text,
-            commenter_name=commenter_name
+            commenter_name=commenter_name,
+            technical_context=technical_context
         )
 
         payload = {

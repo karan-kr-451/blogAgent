@@ -169,6 +169,47 @@ class MemorySystem:
             logger.error(f"Failed to store content: {e}", extra={"agent": "MemorySystem"})
             raise MemorySystemError(f"Failed to store content: {e}") from e
 
+    async def search(self, query: str, limit: int = 3) -> list[dict[str, Any]]:
+        """
+        Search for relevant content based on a text query.
+        
+        Args:
+            query: Search query text
+            limit: Number of results to return
+            
+        Returns:
+            List of matching metadata entries
+        """
+        try:
+            if self.index is None or self.index.ntotal == 0:
+                return []
+            
+            # Compute query embedding
+            embedding = await self.compute_embedding(query)
+            if len(embedding.shape) == 1:
+                embedding = embedding.reshape(1, -1)
+            
+            faiss.normalize_L2(embedding)
+            
+            # Search
+            k = min(limit, self.index.ntotal)
+            scores, indices = self.index.search(embedding.astype(np.float32), k)
+            
+            results = []
+            for i, idx in enumerate(indices[0]):
+                if idx != -1 and idx < len(self.metadata["entries"]):
+                    entry = self.metadata["entries"][int(idx)]
+                    results.append({
+                        **entry,
+                        "similarity_score": float(scores[0][i])
+                    })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"Search failed: {e}", extra={"agent": "MemorySystem"})
+            return []
+
     async def check_duplicate(self, embedding: np.ndarray, threshold: float | None = None) -> bool:
         """
         Check if content is a duplicate based on embedding similarity.
