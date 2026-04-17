@@ -116,8 +116,18 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.error(f"Memory system failed to load: {e}", extra={"agent": "API"})
 
-    # Create background task so lifespan can complete (and port can open) immediately
+    # Launch built-in scheduler in the background
+    async def run_scheduler_background():
+        try:
+            from src.scheduler.scheduler import create_scheduler
+            scheduler = create_scheduler(config=config)
+            await scheduler.start_async()
+        except Exception as e:
+            logger.error(f"Background scheduler failed: {e}", extra={"agent": "API"})
+
+    # Create background tasks so lifespan can complete immediately
     asyncio.create_task(init_memory_background())
+    asyncio.create_task(run_scheduler_background())
 
     yield
 

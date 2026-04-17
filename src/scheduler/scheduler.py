@@ -34,7 +34,11 @@ class PipelineScheduler:
         """
         self.config = config or get_config()
         self.is_running = False
-        self.api_base_url = f"http://{self.config.api_host}:{self.config.api_port}"
+        # For internal loopback calls, use localhost if binding to 0.0.0.0
+        host = self.config.api_host
+        if host == "0.0.0.0":
+            host = "127.0.0.1"
+        self.api_base_url = f"http://{host}:{self.config.api_port}"
         
         logger.info(
             "PipelineScheduler initialized",
@@ -155,11 +159,37 @@ class PipelineScheduler:
         # Schedule comment responder to run every hour
         schedule.every().hour.do(self._run_comment_responder_sync)
 
-        logger.info(f"Scheduled pipeline for {schedule_time} daily", extra={"agent": "Scheduler"})
-        logger.info("Scheduled comment responder for every hour", extra={"agent": "Scheduler"})
+    async def start_async(self):
+        """
+        Start scheduler asynchronously (non-blocking).
+        Perfect for running inside a FastAPI lifespan background task.
+        """
+        schedule_time = self.config.schedule_time
 
-        # Run scheduler loop
-        self._run_scheduler_loop()
+        if not self.config.schedule_enabled:
+            logger.info("Scheduler is disabled in config", extra={"agent": "Scheduler"})
+            return
+
+        logger.info(
+            f"Starting async scheduler (Daily: {schedule_time}, Comment Responder: Every Hour)",
+            extra={"agent": "Scheduler"}
+        )
+
+        # Schedule daily run
+        schedule.every().day.at(schedule_time).do(self._run_pipeline_sync)
+        
+        # Schedule comment responder to run every hour
+        schedule.every().hour.do(self._run_comment_responder_sync)
+
+        while True:
+            try:
+                # Check for pending tasks
+                schedule.run_pending()
+            except Exception as e:
+                logger.error(f"Scheduler error in loop: {e}", extra={"agent": "Scheduler"})
+            
+            # Wait 60 seconds before next check
+            await asyncio.sleep(60)
 
     def _run_scheduler_loop(self):
         """Run the scheduler loop."""
