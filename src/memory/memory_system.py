@@ -9,7 +9,7 @@ from typing import Any
 
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
 from src.config import Config, get_config
 from src.logging_config import get_logger
@@ -36,7 +36,7 @@ class MemorySystem:
     by comparing cosine similarity between content items.
     """
     _instance = None
-    _model_cache: SentenceTransformer | None = None
+    _model_cache: TextEmbedding | None = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
@@ -63,7 +63,7 @@ class MemorySystem:
             },
             "replied_comment_ids": []
         }
-        self.embedding_model: SentenceTransformer | None = None
+        self.embedding_model: TextEmbedding | None = None
         
         # Paths for persistence
         self.index_path = Path(self.config.memory_index_path)
@@ -90,13 +90,14 @@ class MemorySystem:
         # Load embedding model (shared across instances)
         if MemorySystem._model_cache is None:
             import asyncio
-            logger.info("Loading embedding model: paraphrase-MiniLM-L3-v2", extra={"agent": "MemorySystem"})
+            logger.info("Loading lightweight embedding model via fastembed (ONNX)", extra={"agent": "MemorySystem"})
             loop = asyncio.get_event_loop()
-            # Use factory method to avoid multiple simultaneous loads if called concurrently
+            # fastembed loads the model lazily, but we want to trigger it now
+            # default model is BAAI/bge-small-en-v1.5 (384 dims, highly efficient)
             MemorySystem._model_cache = await loop.run_in_executor(
-                None, lambda: SentenceTransformer('paraphrase-MiniLM-L3-v2')
+                None, lambda: TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
             )
-            logger.info("Embedding model loaded successfully", extra={"agent": "MemorySystem"})
+            logger.info("Embedding model initialized", extra={"agent": "MemorySystem"})
         
         self.embedding_model = MemorySystem._model_cache
 
@@ -376,10 +377,13 @@ class MemorySystem:
                 raise MemorySystemError("Embedding model not available")
             
             loop = asyncio.get_event_loop()
-            embedding = await loop.run_in_executor(
-                None, lambda: self.embedding_model.encode(text)
+            embeddings = await loop.run_in_executor(
+                None, lambda: list(self.embedding_model.embed([text]))
             )
-            return embedding.astype(np.float32)
+            if not embeddings:
+                raise MemorySystemError("Embedding failed to generate output")
+            
+            return np.array(embeddings[0]).astype(np.float32)
             
         except Exception as e:
             logger.error(f"Failed to compute embedding: {e}", extra={"agent": "MemorySystem"})
