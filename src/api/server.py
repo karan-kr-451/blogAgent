@@ -200,6 +200,30 @@ async def trigger_pipeline(
     return {"status": "started", "message": f"Pipeline triggered for {len(targets)} targets"}
 
 
+@app.post("/comments/respond")
+async def trigger_comment_responder(
+    background_tasks: BackgroundTasks
+):
+    """
+    Trigger the comment responder agent to reply to new comments.
+    """
+    background_tasks.add_task(run_comment_responder)
+    return {"status": "started", "message": "Comment responder triggered"}
+
+
+async def run_comment_responder():
+    """Run the comment responder agent in the background."""
+    from src.agents.comment_responder import CommentResponderAgent
+    try:
+        agent = CommentResponderAgent()
+        await agent.initialize()
+        results = await agent.run()
+        await agent.close()
+        logger.info(f"Comment responder finished. Replied to {len(results)} comments.", extra={"agent": "API"})
+    except Exception as e:
+        logger.error(f"Comment responder task failed: {e}", extra={"agent": "API"})
+
+
 async def run_pipeline(targets: list[dict[str, Any]]) -> dict[str, Any]:
     """
     Run the content pipeline for multiple targets.

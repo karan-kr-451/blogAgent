@@ -133,3 +133,33 @@ class PublicationResult:
     post_url: str | None
     error: str | None
     published_at: datetime
+
+
+@dataclass
+class Comment:
+    """Represents a comment on a blog post."""
+    id: str
+    body: str
+    user_name: str
+    user_username: str
+    created_at: datetime
+    article_id: str
+    parent_id: str | None = None
+    children: list["Comment"] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, Any]:
+        """Serialize Comment to JSON-compatible dict."""
+        data = asdict(self)
+        data["created_at"] = self.created_at.isoformat()
+        data["children"] = [child.to_json() for child in self.children]
+        return data
+
+
+@dataclass
+class CommentReplyResult:
+    """Result of replying to a comment."""
+    success: bool
+    comment_id: str
+    reply_id: str | None
+    error: str | None
+    replied_at: datetime

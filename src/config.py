@@ -179,6 +179,10 @@ class Config(BaseSettings):
         default="json",
         description="Log output format"
     )
+    log_file: str | None = Field(
+        default="logs/agent.log",
+        description="Optional file path for log output"
+    )
     
     @field_validator("medium_api_token")
     @classmethod

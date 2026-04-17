@@ -60,7 +60,8 @@ class MemorySystem:
                 "total_processed": 0,
                 "duplicates_detected": 0,
                 "last_publication": None
-            }
+            },
+            "replied_comment_ids": []
         }
         self.embedding_model: SentenceTransformer | None = None
         
@@ -259,6 +260,19 @@ class MemorySystem:
         
         return hours_since >= 24
 
+    async def is_comment_replied(self, comment_id: str) -> bool:
+        """Check if a comment has already been replied to."""
+        return comment_id in self.metadata.get("replied_comment_ids", [])
+
+    async def mark_comment_replied(self, comment_id: str) -> None:
+        """Mark a comment as replied."""
+        if "replied_comment_ids" not in self.metadata:
+            self.metadata["replied_comment_ids"] = []
+        
+        if comment_id not in self.metadata["replied_comment_ids"]:
+            self.metadata["replied_comment_ids"].append(comment_id)
+            await self.persist()
+
     async def persist(self) -> None:
         """
         Save index and metadata to disk.
@@ -319,7 +333,8 @@ class MemorySystem:
                             "total_processed": 0,
                             "duplicates_detected": 0,
                             "last_publication": None
-                        }
+                        },
+                        "replied_comment_ids": []
                     }
             else:
                 logger.info("No metadata file found, using defaults")
@@ -334,7 +349,8 @@ class MemorySystem:
                     "total_processed": 0,
                     "duplicates_detected": 0,
                     "last_publication": None
-                }
+                },
+                "replied_comment_ids": []
             }
             logger.info("Recovered with empty memory state")
 

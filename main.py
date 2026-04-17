@@ -21,13 +21,20 @@ logger = get_logger(__name__)
 
 @click.group()
 @click.option('--log-level', type=click.Choice(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']), 
-              default='INFO', help='Logging level')
-@click.option('--log-format', type=click.Choice(['json', 'text']), default='json', 
-              help='Log output format')
-@click.option('--log-file', type=str, default='logs/agent.log', help='Log file path')
+              default=None, help='Logging level (defaults to .env LOG_LEVEL)')
+@click.option('--log-format', type=click.Choice(['json', 'text']), default=None, 
+              help='Log output format (defaults to .env LOG_FORMAT)')
+@click.option('--log-file', type=str, default=None, help='Log file path (defaults to .env LOG_FILE)')
 @click.pass_context
 def cli(ctx, log_level, log_format, log_file):
     """Autonomous Blog Agent CLI."""
+    config = get_config()
+    
+    # Resolve values: CLI arg > .env/Config > Default
+    log_level = log_level or config.log_level
+    log_format = log_format or config.log_format
+    log_file = log_file or config.log_file
+    
     ctx.ensure_object(dict)
     ctx.obj['log_level'] = log_level
     ctx.obj['log_format'] = log_format
@@ -40,13 +47,16 @@ def cli(ctx, log_level, log_format, log_file):
 import os
 
 @cli.command()
-@click.option('--host', default='0.0.0.0', help='API server host')
-@click.option('--port', default=None, type=int, help='API server port (falls back to PORT env or config)')
+@click.option('--host', default=None, help='API server host (defaults to .env API_HOST)')
+@click.option('--port', default=None, type=int, help='API server port (falls back to PORT env or .env API_PORT)')
 @click.option('--reload', is_flag=True, help='Enable auto-reload for development')
 @click.pass_context
 def run_server(ctx, host, port, reload):
     """Start the FastAPI API server."""
     config = get_config()
+    
+    # Resolve host: CLI arg > .env > Default
+    host = host or config.api_host or "0.0.0.0"
     
     # Resolve PORT at runtime for Render compatibility
     if port is None:
@@ -54,8 +64,9 @@ def run_server(ctx, host, port, reload):
     
     logger.info(f"Starting API server on {host}:{port}", extra={"agent": "CLI"})
     
-    # Set the resolved port in config as well
+    # Set the resolved port and host in config as well
     config.api_port = port
+    config.api_host = host
     
     uvicorn.run(
         "src.api.server:app",
@@ -68,18 +79,19 @@ def run_server(ctx, host, port, reload):
 
 
 @cli.command()
-@click.option('--time', default=None, help='Schedule time (HH:MM format)')
+@click.option('--time', default=None, help='Daily execution time (HH:MM) (defaults to .env SCHEDULE_TIME)')
 @click.pass_context
 def run_scheduler(ctx, time):
-    """Start the daily execution scheduler."""
+    """Run the agent on a daily schedule."""
     config = get_config()
+    schedule_time = time or config.schedule_time
     
-    logger.info("Starting scheduler", extra={"agent": "CLI"})
+    logger.info(f"Starting scheduler for {schedule_time}", extra={"agent": "CLI"})
     
     scheduler = PipelineScheduler(config=config)
     
     try:
-        scheduler.start(time=time)
+        scheduler.start(time=schedule_time)
     except KeyboardInterrupt:
         logger.info("Scheduler stopped by user", extra={"agent": "CLI"})
         sys.exit(0)
@@ -116,6 +128,43 @@ def trigger_pipeline(ctx, url):
                 
     except Exception as e:
         logger.error(f"Pipeline execution failed: {e}", extra={"agent": "CLI"})
+        click.echo(f"\nError: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
+@click.pass_context
+def respond_comments(ctx):
+    """Manually trigger the comment responder agent."""
+    from src.agents.comment_responder import CommentResponderAgent
+    
+    config = get_config()
+    logger.info("Manually triggering comment responder", extra={"agent": "CLI"})
+    
+    async def run_responder():
+        agent = CommentResponderAgent(config=config)
+        await agent.initialize()
+        results = await agent.run()
+        await agent.close()
+        return results
+
+    try:
+        results = asyncio.run(run_responder())
+        click.echo(f"\nComment Responder Results:")
+        click.echo(f"Total actions: {len(results)}")
+        
+        success_count = sum(1 for r in results if r.success)
+        click.echo(f"Successes: {success_count}")
+        click.echo(f"Failures: {len(results) - success_count}")
+        
+        for r in results:
+            if not r.success:
+                click.echo(f"  - Error in comment {r.comment_id}: {r.error}")
+            else:
+                click.echo(f"  - Replied to {r.comment_id} (Reply ID: {r.reply_id})")
+                
+    except Exception as e:
+        logger.error(f"Comment responder failed: {e}", extra={"agent": "CLI"})
         click.echo(f"\nError: {e}", err=True)
         sys.exit(1)
 

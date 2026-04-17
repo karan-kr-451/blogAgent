@@ -95,6 +95,38 @@ class PipelineScheduler:
         finally:
             self.is_running = False
 
+    async def run_comment_responder(self) -> dict[str, Any]:
+        """
+        Trigger the comment responder agent via API.
+        
+        Returns:
+            Execution result
+        """
+        try:
+            logger.info(
+                f"[{datetime.now()}] Starting scheduled comment response run",
+                extra={"agent": "Scheduler"}
+            )
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(f"{self.api_base_url}/comments/respond")
+                response.raise_for_status()
+                result = response.json()
+            
+            logger.info(
+                f"[{datetime.now()}] Comment responder triggered: {result.get('status')}",
+                extra={"agent": "Scheduler"}
+            )
+            
+            return result
+            
+        except Exception as e:
+            logger.error(
+                f"[{datetime.now()}] Comment responder trigger failed: {e}",
+                extra={"agent": "Scheduler", "error": str(e)}
+            )
+            raise
+
     def start(self, time: str | None = None):
         """
         Start scheduler with daily execution at specified time.
@@ -119,8 +151,12 @@ class PipelineScheduler:
 
         # Schedule daily run - use sync wrapper that creates its own event loop
         schedule.every().day.at(schedule_time).do(self._run_pipeline_sync)
+        
+        # Schedule comment responder to run every hour
+        schedule.every().hour.do(self._run_comment_responder_sync)
 
         logger.info(f"Scheduled pipeline for {schedule_time} daily", extra={"agent": "Scheduler"})
+        logger.info("Scheduled comment responder for every hour", extra={"agent": "Scheduler"})
 
         # Run scheduler loop
         self._run_scheduler_loop()
@@ -159,6 +195,30 @@ class PipelineScheduler:
         except Exception as e:
             logger.error(
                 f"Scheduled pipeline failed: {e}",
+                extra={"agent": "Scheduler"},
+                exc_info=True
+            )
+
+    def _run_comment_responder_sync(self):
+        """Run comment responder with its own event loop."""
+        logger.info("Scheduled comment responder run starting", extra={"agent": "Scheduler"})
+        
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            try:
+                result = loop.run_until_complete(self.run_comment_responder())
+                logger.info(
+                    f"Scheduled comment responder completed: {result.get('status', 'unknown')}",
+                    extra={"agent": "Scheduler"}
+                )
+            finally:
+                loop.close()
+                
+        except Exception as e:
+            logger.error(
+                f"Scheduled comment responder failed: {e}",
                 extra={"agent": "Scheduler"},
                 exc_info=True
             )
