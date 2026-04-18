@@ -1,7 +1,7 @@
 # 🤖 Autonomous Blog Agent
 
 <p align="center">
-  <b>AI-Powered Multi-Agent System for Autonomous Technical Blog Generation</b>
+  <b>AI-Powered Multi-Agent System for Autonomous Technical Blog Generation & Engagement</b>
 </p>
 
 <p align="center">
@@ -9,26 +9,26 @@
   <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi" alt="FastAPI">
   <img src="https://img.shields.io/badge/LangGraph-1CB074?style=for-the-badge" alt="LangGraph">
   <img src="https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright" alt="Playwright">
-  <img src="https://img.shields.io/badge/Three.js-049EF4?style=for-the-badge&logo=three.js" alt="Three.js">
   <img src="https://img.shields.io/badge/FAISS-0099E5?style=for-the-badge" alt="FAISS">
-  <img src="https://img.shields.io/github/license/your-org/blog-agent?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/badge/Ollama-000000?style=for-the-badge" alt="Ollama">
+  <img src="https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render" alt="Render">
 </p>
 
 <p align="center">
   <a href="#-features">Features</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#%EF%B8%8F-architecture">Architecture</a> •
-  <a href="#-ai-topics">AI Topics</a> •
-  <a href="#-dashboard">Dashboard</a> •
-  <a href="#-testing">Testing</a> •
-  <a href="#-api-reference">API</a>
+  <a href="#-agents">Agents</a> •
+  <a href="#-deployment">Deployment</a> •
+  <a href="#-api-reference">API</a> •
+  <a href="#-testing">Testing</a>
 </p>
 
 ---
 
 <p align="center">
-  <b>🎯 Generate high-quality technical blog posts autonomously with AI agents</b><br>
-  <i>From autonomous web research → AI-powered writing → professional publishing</i>
+  <b>🎯 Fully autonomous: Crawl → Extract → Write → Edit → Review → SEO → Publish → Engage</b><br>
+  <i>From web research to published blog posts with AI-powered comment responses</i>
 </p>
 
 <p align="center">
@@ -39,44 +39,50 @@
 
 ## ✨ Features
 
-### 🕵️ Autonomous Research Agent
-- **ReAct Loop**: Reasoning + Action cycle for intelligent web navigation
-- **LLM-Powered Decisions**: Uses Gemma via Ollama to decide next actions
-- **Anti-Bot Bypass**: Stealth mode with realistic user agents and timing
-- **149 Companies**: Database of tech companies across 16 categories
+### 🕷️ Autonomous Research (CrawlerAgent)
+- **ReAct Loop** — LLM-driven Reason→Act→Observe cycle for intelligent web navigation
+- **500+ Companies** — Database of tech companies across 16 categories for diverse content discovery
+- **Anti-Bot Bypass** — Stealth mode with realistic user agents, randomized timing, and Playwright automation
+- **Goal-Directed Crawling** — LLM dynamically decides which links to follow and when to extract
 
 ### 🧠 Vector Memory System
-- **FAISS Integration**: Semantic duplicate detection via embeddings
-- **Content Freshness**: Never writes about the same topic twice
-- **Persistent Storage**: Vectors stored for cross-session memory
-- **Smart Filtering**: Configurable similarity thresholds
+- **FAISS Integration** — Semantic duplicate detection via 384-dim embeddings (fastembed ONNX)
+- **Cross-Session Persistence** — Index + metadata saved to disk, survives restarts
+- **Knowledge Base** — Stores crawled content summaries for the Comment Responder's RAG retrieval
+- **Singleton Pattern** — Single FAISS index shared across all agents
 
-### ✍️ Collaborative AI Writing Pipeline
+### ✍️ 8-Agent LangGraph Pipeline
 ```
-Crawler → Extractor → Writer → Editor → Reviewer → Publisher
+Crawler → Extractor → DuplicateCheck → Writer → Editor → Reviewer → SEO → Publisher
 ```
-- **Multi-Agent Chain**: Each agent specializes in one task
-- **Mermaid Diagrams**: Auto-generates architecture diagrams
-- **Quality Gates**: Edit → Review ensures professional output
-- **Originality Check**: Embedding similarity prevents plagiarism
+- **LangGraph StateGraph** — Declarative workflow with conditional branching
+- **Mermaid Diagrams** — Auto-generated architecture diagrams in every post
+- **Originality Enforcement** — 3-layer plagiarism detection (embeddings + n-grams + sentence matching)
+- **SEO Optimization** — Pure-Python keyword extraction, schema markup, and 5 platform variants
 
-### 📊 Real-Time 3D Dashboard
-- **Three.js Visualization**: Watch agents work in 3D space
-- **Live Pipeline Tracking**: Monitor which agent is active
-- **Beautiful UI**: Glassmorphism design with smooth animations
-- **Blog Reader**: View generated posts with diagram rendering
+### 💬 Comment Responder Agent
+- **Automatic Engagement** — Fetches and replies to comments on all published articles
+- **RAG-Style Context** — Searches FAISS memory for relevant technical content before replying
+- **Smart Prompting** — System/user prompt separation with comment classification and persona control
+- **Idempotent** — Tracks replied comment IDs across scheduler runs
 
-### 📅 Smart Scheduler
-- **Daily Automation**: Runs automatically at configured times
-- **Concurrent Prevention**: Prevents overlapping executions
-- **Flexible Configuration**: Customizable schedule and targets
-- **Error Recovery**: Automatic retry with exponential backoff
+### 📅 Built-in Async Scheduler
+- **Native asyncio Loop** — No external scheduler dependencies, runs within the FastAPI process
+- **Daily Pipeline** — Triggers content generation at a configurable time (default: 09:00)
+- **Hourly Comment Responder** — Checks for and replies to new comments every hour
+- **Concurrent Prevention** — Global flag prevents overlapping pipeline executions
+
+### 🔍 SEO & Multi-Platform Publishing
+- **5 Platform Variants** — LinkedIn, Twitter/X, DEV.to, Hashnode, Medium content generation
+- **Schema.org Markup** — Auto-generates TechArticle, FAQPage, and HowTo JSON-LD
+- **Mermaid→Image Pipeline** — Converts Mermaid diagrams to rendered images for DEV.to
+- **Tag Sanitization** — Platform-specific tag rules (length, format, count) handled automatically
 
 ### 🚀 Production-Ready
-- **FastAPI Backend**: High-performance async API server
-- **REST API**: Full programmatic control via endpoints
-- **LangGraph Orchestration**: State machine for agent coordination
-- **Comprehensive Logging**: JSON structured logs for monitoring
+- **Single-Process Deployment** — API + scheduler + agents in one process (Render-compatible)
+- **< 3s Port Binding** — Background model loading prevents timeout on cloud platforms
+- **Structured JSON Logging** — Sensitive data redaction, agent tagging, correlation IDs
+- **Circuit Breaker + Retry** — Exponential backoff with full circuit breaker pattern
 
 ---
 
@@ -86,19 +92,19 @@ Crawler → Extractor → Writer → Editor → Reviewer → Publisher
 
 | Requirement | Version | Purpose |
 |-------------|---------|---------|
-| **Python** | 3.12+ (recommended) | Backend runtime |
-| **Node.js** | 18+ | 3D Dashboard |
+| **Python** | 3.12+ | Backend runtime |
 | **Ollama** | Latest | Local LLM inference |
+| **Node.js** | 18+ | 3D Dashboard (optional) |
 | **Git** | Latest | Version control |
 
 ### 1️⃣ Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/blog-agent.git
-cd blog-agent
+git clone https://github.com/karan-kr-451/blogAgent.git
+cd blogAgent
 
-# Create virtual environment (Python 3.12 recommended)
+# Create virtual environment
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
@@ -108,10 +114,8 @@ pip install -e .
 # Install Playwright browsers
 playwright install
 
-# Install frontend dependencies
-cd frontend
-npm install
-cd ..
+# (Optional) Install frontend dependencies
+cd frontend && npm install && cd ..
 ```
 
 ### 2️⃣ Configuration
@@ -119,30 +123,58 @@ cd ..
 ```bash
 # Copy example configuration
 cp .env.example .env
+```
 
-# Edit with your settings
-# Key settings:
-# - MEDIUM_API_TOKEN: For publishing (optional)
-# - OLLAMA_ENDPOINT: http://localhost:11434
-# - OLLAMA_MODEL: gemma:7b
-# - SCHEDULE_TIME: 09:00
-# - CRAWLER_START_URL: https://blog.bytebytego.com
+Edit `.env` with your settings:
+
+```env
+# Required for publishing
+DEVTO_API_TOKEN=your_devto_api_key
+
+# LLM Configuration (cloud endpoint or local Ollama)
+OLLAMA_ENDPOINT=http://localhost:11434
+OLLAMA_MODEL=gemma:7b
+OLLAMA_API_KEY=             # Optional, for cloud-hosted Ollama
+
+# Scheduler
+SCHEDULE_TIME=09:00
+SCHEDULE_ENABLED=true
+
+# Publishing targets
+PUBLISH_TO_DEVTO=true
+PUBLISH_TO_MEDIUM=false
+MEDIUM_API_TOKEN=           # Optional
+
+# Server
+API_HOST=0.0.0.0
+API_PORT=8000
 ```
 
 ### 3️⃣ Launch
 
-**Terminal 1: Start Backend**
 ```bash
-python -m src.main run-server --host 127.0.0.1 --port 8000
+# Start the API server (includes scheduler)
+python main.py run-server
+
+# Or with custom options
+python main.py --log-level DEBUG --log-format text run-server --port 8000
+
+# Start 3D Dashboard (optional, separate terminal)
+cd frontend && npm run dev
 ```
 
-**Terminal 2: Start 3D Dashboard**
-```bash
-cd frontend
-npm run dev
-```
+### 4️⃣ Manual Operations
 
-**Open Browser**: http://localhost:3000
+```bash
+# Trigger the full pipeline manually
+python main.py trigger-pipeline
+
+# Run the comment responder
+python main.py respond-comments
+
+# Check server health
+python main.py health
+```
 
 ---
 
@@ -152,194 +184,167 @@ npm run dev
 
 ```mermaid
 graph TB
-    subgraph Frontend ["🎨 3D Dashboard (React + Three.js)"]
-        UI[User Interface]
-        Viz[3D Visualization]
-        Reader[Blog Reader]
+    subgraph Server ["FastAPI Server (Single Process)"]
+        API["REST API Endpoints"]
+        WF["LangGraph Workflow"]
+        SCH["Async Scheduler<br/>(asyncio loop)"]
     end
     
-    subgraph Backend ["⚙️ FastAPI Server"]
-        API[REST API]
-        Workflow[LangGraph Workflow]
-        Scheduler[Daily Scheduler]
+    subgraph Agents ["8-Agent Pipeline"]
+        C["🕷️ Crawler<br/>(Playwright + ReAct)"]
+        E["🔧 Extractor<br/>(Trafilatura + BS4)"]
+        DC["🔎 DuplicateCheck<br/>(FAISS cosine sim)"]
+        W["✍️ Writer<br/>(Ollama/Gemma)"]
+        ED["✏️ Editor<br/>(Ollama LLM)"]
+        R["🔍 Reviewer<br/>(sentence-transformers)"]
+        SEO["📊 SEO<br/>(Pure Python)"]
+        P["📤 Publisher<br/>(DEV.to API)"]
     end
     
-    subgraph Agents ["🤖 Agent Layer"]
-        Crawler["🕷️ Crawler<br/>(Playwright)"]
-        Extractor["🔧 Extractor<br/>(BeautifulSoup)"]
-        Writer["✍️ Writer<br/>(Ollama/Gemma)"]
-        Editor["✏️ Editor<br/>(LLM)"]
-        Reviewer["🔍 Reviewer<br/>(FAISS)"]
-        Publisher["📤 Publisher<br/>(Medium/Local)"]
+    CR["💬 Comment Responder<br/>(RAG + Ollama)"]
+    
+    subgraph Storage ["Memory & Storage"]
+        FAISS["FAISS Vector Index"]
+        META["metadata.json"]
+        DRAFTS["Local Drafts"]
     end
     
-    subgraph Memory ["🧠 Memory & Storage"]
-        FAISS[FAISS Vectors]
-        Drafts[Local Drafts]
-        Logs[Structured Logs]
-    end
+    API --> WF
+    SCH -->|"daily"| WF
+    SCH -->|"hourly"| CR
     
-    UI --> API
-    Viz --> API
-    Reader --> API
+    WF --> C --> E --> DC --> W --> ED --> R --> SEO --> P
     
-    API --> Workflow
-    Workflow --> Crawler
-    Crawler --> Extractor
-    Extractor --> Writer
-    Writer --> Editor
-    Editor --> Reviewer
-    Reviewer --> Publisher
-    
-    Publisher --> Drafts
-    Workflow --> FAISS
-    Scheduler --> Workflow
-    
-    classDef frontend fill:#667eea,stroke:#764ba2,color:#fff
-    classDef backend fill:#f093fb,stroke:#f5576c,color:#fff
-    classDef agents fill:#4facfe,stroke:#00f2fe,color:#fff
-    classDef memory fill:#43e97b,stroke:#38f9d7,color:#fff
-    
-    class UI,Viz,Reader frontend
-    class API,Workflow,Scheduler backend
-    class Crawler,Extractor,Writer,Editor,Reviewer,Publisher agents
-    class FAISS,Drafts,Logs memory
+    DC -.->|"similarity search"| FAISS
+    CR -.->|"knowledge retrieval"| FAISS
+    P -->|"save draft"| DRAFTS
+    P -->|"store embedding"| FAISS
+    CR -.->|"track replied IDs"| META
 ```
 
-### Agent Responsibilities
-
-| Agent | Responsibility | Technology |
-|-------|---------------|------------|
-| **🕷️ Crawler** | Autonomous web navigation with ReAct loop | Playwright, LLM |
-| **🔧 Extractor** | HTML cleaning & content structuring | BeautifulSoup, Trafilatura |
-| **✍️ Writer** | Original blog post generation | Ollama/Gemma |
-| **✏️ Editor** | Quality improvement & formatting | LLM-based editing |
-| **🔍 Reviewer** | Originality validation & plagiarism check | FAISS embeddings |
-| **📤 Publisher** | Medium API or local draft saving | HTTP, Markdown |
-
-### Workflow Pipeline
+### Data Flow
 
 ```mermaid
 sequenceDiagram
-    participant S as Scheduler/API
+    participant SCH as Scheduler
     participant C as Crawler
     participant E as Extractor
-    participant M as Memory
+    participant M as Memory (FAISS)
     participant W as Writer
     participant ED as Editor
     participant R as Reviewer
+    participant SEO as SEO Agent
     participant P as Publisher
-    
-    S->>C: Trigger crawl (URL + goal)
-    C->>C: ReAct loop navigation
-    C-->>S: Raw HTML content
-    
-    S->>E: Extract content
-    E-->>S: Structured ContentItem
-    
-    S->>M: Check for duplicates
-    M-->>S: Duplicate check result
-    
-    alt Not duplicate
-        S->>W: Generate blog post
-        W-->>S: BlogPost draft
-        
-        S->>ED: Edit & improve
-        ED-->>S: Edited draft
-        
-        S->>R: Review originality
-        R-->>S: Review result
-        
-        S->>P: Publish draft
-        P->>M: Store in memory
-        P-->>S: Publication result
-    else Is duplicate
-        S->>S: Skip & log
+    participant DEV as DEV.to
+
+    SCH->>C: Trigger (random company URL + goal)
+    C->>C: ReAct loop (observe→reason→act)
+    C-->>E: Raw HTML
+
+    E->>E: Trafilatura extract (BS4 fallback)
+    E-->>M: ContentItem
+
+    M->>M: Embed title + 1000 chars
+    M->>M: FAISS search (cosine sim)
+
+    alt Similarity < 0.85
+        M-->>W: Pass (store as research)
+        W->>W: Generate 800-1500 word post
+        W-->>ED: BlogPost + Mermaid diagrams
+        ED->>ED: Improve readability
+        ED-->>R: EditResult
+        R->>R: Embedding sim + n-gram + sentence match
+        alt Original (sim < 0.70)
+            R-->>SEO: Approved
+            SEO->>SEO: Keywords, meta, schema, 5 platforms
+            SEO-->>P: SEO-optimized BlogPost
+            P->>P: Mermaid→image, LaTeX→KaTeX
+            P->>DEV: POST /api/articles (draft)
+            P->>P: Save local draft
+            P->>M: Store embedding
+        end
+    else Similarity ≥ 0.85
+        M-->>SCH: Duplicate — skip
     end
 ```
 
 ---
 
-## 🎯 AI Topics Coverage
+## 🤖 Agents
 
-The system generates content across **comprehensive AI/ML system design topics**:
+### Agent Details
 
-### 🤖 Traditional ML Systems
-- ML infrastructure & platform architecture
-- Distributed ML training systems
-- ML inference optimization
-- Feature stores & data pipelines
-- Model serving & deployment
-- A/B testing & experimentation
+| Agent | File | Key Technology | LLM? |
+|-------|------|---------------|------|
+| **CrawlerAgent** | `src/agents/crawler.py` | Playwright + ReAct loop | ✅ Ollama |
+| **ExtractorAgent** | `src/agents/extractor.py` | Trafilatura + BeautifulSoup | ❌ |
+| **WriterAgent** | `src/agents/writer.py` | Prompt engineering + Mermaid generation | ✅ Ollama |
+| **EditorAgent** | `src/agents/editor.py` | Quality improvement prompts | ✅ Ollama |
+| **ReviewerAgent** | `src/agents/reviewer.py` | sentence-transformers + n-gram analysis | ❌ |
+| **SEOAgent** | `src/agents/seo.py` | Rule-based keyword extraction + schema.org | ❌ |
+| **PublisherAgent** | `src/agents/publisher.py` | DEV.to Forem API + Mermaid→image conversion | ❌ |
+| **CommentResponder** | `src/agents/comment_responder.py` | RAG (FAISS search) + Ollama generation | ✅ Ollama |
 
-### 🧠 AI System Design
-- LLM architecture & scaling
-- AI safety & alignment systems
-- Multimodal AI architectures
-- Edge AI & on-device inference
-- AI privacy & governance
-- Responsible AI deployment
+### ReAct Loop (CrawlerAgent)
 
-### ✨ Generative AI Systems
-- Generative AI infrastructure
-- Diffusion model architectures
-- RAG (Retrieval-Augmented Generation)
-- Multimodal generation systems
-- AI creativity tools
-- Generative workflows & pipelines
+```
+[OBSERVE] Page: Netflix Tech Blog — Articles about microservices, Zuul, Hystrix
+[THINK]   I see a link "How Netflix Scales Its API" — relevant to system design goal
+[ACTION]  CLICK link_index=5
+[OBSERVE] Article page loaded with 2000 words of content
+[THINK]   This contains substantial technical content, ready to extract
+[ACTION]  EXTRACT
+```
 
-### 🎯 Agentic AI Systems
-- Agent frameworks (LangChain, AutoGen)
-- Multi-agent orchestration
-- Tool use patterns
-- Agent memory design
-- Planning & reasoning systems
-- Human-AI collaboration
-
-### 📊 System Design Comparisons
-- SQL vs NoSQL databases
-- Microservices vs Monolith
-- REST vs GraphQL vs gRPC
-- Push vs Pull systems
-- Synchronous vs Asynchronous
-- Vertical vs Horizontal scaling
-
-### 🏢 Company Coverage
-**149 companies** across **16 categories**:
-- Big Tech (Google, Meta, Amazon, Netflix, etc.)
-- AI/ML (OpenAI, Anthropic, Hugging Face, etc.)
-- Infrastructure (Cloudflare, MongoDB, Databricks, etc.)
-- Fintech (Stripe, PayPal, Coinbase, etc.)
-- And 12 more categories!
+The LLM decides navigation dynamically based on page content — no predefined URL patterns.
 
 ---
 
-## 🎨 3D Dashboard
+## 🌐 Deployment
 
-<p align="center">
-  <img src="frontend-screenshot.png" alt="3D Agent Visualization" width="90%">
-</p>
+### Render (Production)
 
-### Features
+The project includes Render-specific configuration:
 
-- **🎮 Interactive 3D Scene**: Orbit, zoom, and explore agent workflow
-- **✨ Animated Agents**: Pulsing, glowing nodes showing active agents
-- **📊 Real-time Status**: See which agent is currently working
-- **📝 Blog Reader**: View posts with Mermaid diagram rendering
-- **🎯 Pipeline Control**: Trigger generation from the UI
-- **💫 Particle Effects**: Beautiful ambient background effects
+| File | Purpose |
+|------|---------|
+| `render.yaml` | Service definition, build command, env vars |
+| `render-build.sh` | Install script (pip + Playwright browsers) |
+| `start.sh` | Startup script (port resolution, server launch) |
 
-### Tech Stack
+```yaml
+# render.yaml
+services:
+  - type: web
+    name: blog-agent
+    runtime: python
+    buildCommand: ./render-build.sh
+    startCommand: ./start.sh
+    envVars:
+      - key: PORT
+        generateValue: true
+      - key: SCHEDULE_ENABLED
+        value: "true"
+```
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | React 18 + TypeScript |
-| **3D Engine** | Three.js + @react-three/fiber |
-| **Components** | @react-three/drei |
-| **Build Tool** | Vite 5 |
-| **Routing** | React Router 6 |
-| **Markdown** | react-markdown + rehype-raw |
-| **Diagrams** | Mermaid.js |
+**Key deployment decisions:**
+- **Single process** — API + scheduler in one process to stay within Render's free tier
+- **Dynamic PORT** — Pydantic `validation_alias="PORT"` auto-resolves Render's assigned port
+- **Background model loading** — `asyncio.create_task()` in lifespan prevents port-binding timeout
+- **Memory-conscious** — fastembed (ONNX, ~80MB) instead of sentence-transformers (~200MB)
+
+### Local Development
+
+```bash
+# Start with dev mode (auto-reload)
+python main.py run-server --reload
+
+# View structured logs in text mode
+python main.py --log-format text run-server
+
+# Debug level logging
+python main.py --log-level DEBUG run-server
+```
 
 ---
 
@@ -349,51 +354,37 @@ The system generates content across **comprehensive AI/ML system design topics**
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/pipeline/trigger` | Trigger content pipeline |
+| `POST` | `/pipeline/trigger` | Trigger the content generation pipeline |
 | `GET` | `/pipeline/status` | Get current pipeline status |
 | `GET` | `/history` | Get processing history |
 | `GET` | `/stats` | Get system statistics |
 | `GET` | `/drafts` | List all generated drafts |
+| `GET` | `/drafts/{filename}` | Get a specific draft |
+| `POST` | `/comments/respond` | Trigger comment responder |
 | `GET` | `/health` | Health check |
 
-### Example Usage
+### Usage Examples
 
-**Trigger Pipeline**
 ```bash
+# Trigger pipeline
 curl -X POST http://localhost:8000/pipeline/trigger \
   -H "Content-Type: application/json" \
   -d '{"start_url": "https://blog.bytebytego.com"}'
-```
 
-**Check Status**
-```bash
+# Check pipeline status
 curl http://localhost:8000/pipeline/status
-```
+# Response: {"status": "running", "current_step": "Processing Netflix", ...}
 
-**Response**
-```json
-{
-  "status": "running",
-  "current_step": "Processing Netflix",
-  "items_processed": 1,
-  "errors": [],
-  "last_run": "2026-04-11T20:14:45.230880"
-}
-```
-
-**Get Statistics**
-```bash
+# Get statistics
 curl http://localhost:8000/stats
-```
+# Response: {"total_processed": 14, "duplicates_detected": 0, "success_rate": 100.0, ...}
 
-**Response**
-```json
-{
-  "total_processed": 14,
-  "duplicates_detected": 0,
-  "last_publication": "2026-04-11T20:20:53",
-  "success_rate": 100.0
-}
+# Trigger comment responder
+curl -X POST http://localhost:8000/comments/respond
+
+# Health check
+curl http://localhost:8000/health
+# Response: {"status": "healthy", "version": "1.0.0", "timestamp": "..."}
 ```
 
 ---
@@ -406,222 +397,189 @@ curl http://localhost:8000/stats
 # All tests
 pytest tests/ -v
 
-# Without memory tests (faster)
-pytest tests/test_content_item_properties.py \
-       tests/test_crawler_properties.py \
-       tests/test_writer_properties.py -v
-
-# With coverage
+# With coverage report
 pytest tests/ --cov=src --cov-report=html
+
+# Specific test files
+pytest tests/test_content_item_properties.py -v
+pytest tests/test_crawler_properties.py -v
+pytest tests/test_writer_properties.py -v
 ```
 
-### Property-Based Testing
+### Property-Based Testing (Hypothesis)
 
-We use **Hypothesis** to validate **20+ correctness properties**:
+We use **Hypothesis** to validate **20+ correctness properties** — not just example-based tests:
 
-| # | Property | Description |
-|---|----------|-------------|
-| 1 | Robots.txt Compliance | Crawler respects robots.txt |
-| 2 | HTML Cleaning | Preserves content structure |
-| 3 | ContentItem Structure | Completeness validation |
-| 4 | Serialization Round-Trip | Serialize/deserialize integrity |
-| 5 | Cosine Similarity | Mathematical properties |
-| 6 | Duplicate Detection | Threshold behavior |
-| 7 | Word Count Validation | Blog post length constraints |
-| 8 | Exponential Backoff | Retry logic correctness |
-| 9 | Blog Post Structure | Required fields presence |
-| 10 | Code Block Formatting | Preservation through edits |
-| 11 | Change Tracking | Edit history accuracy |
-| 12 | Review Thresholds | Decision boundary behavior |
-| 13 | N-gram Overlap | Plagiarism detection |
-| 14 | Review Justification | Presence & quality |
-| 15 | Tag Generation | Required tags present |
-| 16 | Rate Limiting | Publication frequency |
-| 17 | Concurrent Prevention | Single execution guarantee |
-| 18 | API Key Security | No secret leakage |
-| 19 | Ollama Retry | Retry limit enforcement |
-| 20 | Regeneration Attempts | Attempt limit control |
+| # | Property | What It Validates |
+|---|----------|-------------------|
+| 1 | Robots.txt Compliance | Crawler respects robots.txt rules |
+| 2 | HTML Cleaning | Content structure preserved after extraction |
+| 3 | ContentItem Structure | All required fields present and valid |
+| 4 | Serialization Round-Trip | Serialize→deserialize produces identical data |
+| 5 | Cosine Similarity | Mathematical bounds [0,1] and symmetry |
+| 6 | Duplicate Detection | Threshold behavior at boundary values |
+| 7 | Word Count Validation | Blog posts within [min, max] word count |
+| 8 | Exponential Backoff | Retry delays grow correctly with cap |
+| 9 | Blog Post Structure | Required sections and heading hierarchy |
+| 10 | Code Block Formatting | Code blocks survive editing unchanged |
+| 11 | Change Tracking | Editor reports accurate diffs |
+| 12 | Review Thresholds | Decision boundaries are correct |
+| 13 | N-gram Overlap | Plagiarism detection accuracy |
+| 14 | Review Justification | Reviewer always explains its decision |
+| 15 | Tag Generation | Tags match platform requirements |
+| 16 | Rate Limiting | Publication frequency limits enforced |
+| 17 | Concurrent Prevention | Only one pipeline runs at a time |
+| 18 | API Key Security | Secrets never appear in log output |
+| 19 | Ollama Retry | Retry limits are respected |
+| 20 | Regeneration Attempts | Max attempts enforced correctly |
 
 ---
 
 ## 📂 Project Structure
 
 ```
-blog-agent/
-├── src/                          # Backend source code
-│   ├── agents/                   # Agent implementations
-│   │   ├── crawler.py            # 🕷️ ReAct loop web crawler
-│   │   ├── extractor.py          # 🔧 HTML content extractor
-│   │   ├── writer.py             # ✍️ AI blog post writer
-│   │   ├── editor.py             # ✏️ Content editor
-│   │   ├── reviewer.py           # 🔍 Originality reviewer
-│   │   └── publisher.py          # 📤 Medium/local publisher
-│   ├── api/                      # FastAPI server
-│   │   ├── server.py             # REST API endpoints
-│   │   └── workflow.py           # LangGraph orchestration
-│   ├── memory/                   # Vector memory system
-│   │   └── memory_system.py      # FAISS duplicate detection
-│   ├── scheduler/                # Task scheduler
-│   │   └── scheduler.py          # Daily execution
-│   ├── utils/                    # Utilities
-│   │   └── retry.py              # Exponential backoff
-│   ├── models/                   # Data models
-│   │   └── data_models.py        # Pydantic models
-│   ├── config.py                 # Configuration management
-│   ├── logging_config.py         # Structured logging
-│   ├── companies_database.py     # 149 tech companies
-│   └── main.py                   # CLI entry point
-├── frontend/                     # 3D Dashboard
-│   ├── src/                      # React + TypeScript
-│   ├── package.json
-│   └── vite.config.ts
-├── tests/                        # Test suite
-│   ├── fixtures/                 # Test fixtures
-│   ├── conftest.py               # Pytest config
-│   └── test_*_properties.py      # Property-based tests
-├── drafts/                       # Generated blog posts
-├── memory/                       # FAISS vector storage
-├── logs/                         # Structured logs
-├── .env.example                  # Configuration template
-├── pyproject.toml                # Python dependencies
-└── README.md                     # This file
+blogAgent/
+├── main.py                           # CLI entry point (Click)
+├── src/
+│   ├── agents/
+│   │   ├── crawler.py                # 🕷️ ReAct web crawler (Playwright + LLM)
+│   │   ├── extractor.py              # 🔧 HTML → ContentItem (Trafilatura + BS4)
+│   │   ├── writer.py                 # ✍️ Blog post generator (Ollama)
+│   │   ├── editor.py                 # ✏️ Readability improver (Ollama)
+│   │   ├── reviewer.py              # 🔍 Originality validator (embeddings + n-grams)
+│   │   ├── seo.py                    # 📊 SEO optimizer (pure Python, no LLM)
+│   │   ├── publisher.py              # 📤 DEV.to/Medium publisher
+│   │   └── comment_responder.py      # 💬 Auto comment replies (RAG + Ollama)
+│   ├── api/
+│   │   ├── server.py                 # FastAPI app, lifespan, endpoints
+│   │   └── workflow.py               # LangGraph StateGraph orchestration
+│   ├── memory/
+│   │   └── memory_system.py          # FAISS vector store (Singleton)
+│   ├── scheduler/
+│   │   └── scheduler.py              # Native asyncio scheduler
+│   ├── models/
+│   │   └── data_models.py            # Pydantic data models
+│   ├── utils/
+│   │   └── retry.py                  # Exponential backoff + Circuit Breaker
+│   ├── config.py                     # Pydantic Settings configuration
+│   ├── logging_config.py             # JSON structured logging + redaction
+│   └── companies_database.py         # 500+ tech companies (16 categories)
+├── frontend/                         # 3D Dashboard (React + Three.js + Vite)
+├── tests/                            # Hypothesis property-based tests
+├── drafts/                           # Generated blog posts (local storage)
+├── memory/                           # FAISS index + metadata persistence
+├── logs/                             # Structured JSON logs
+├── render.yaml                       # Render deployment config
+├── render-build.sh                   # Render build script
+├── start.sh                          # Production startup script
+├── pyproject.toml                    # Python dependencies
+├── requirements.txt                  # Pip requirements
+├── .env.example                      # Configuration template
+└── README.md                         # This file
 ```
 
 ---
 
-## 🎯 Usage Examples
+## 🔧 Configuration Reference
 
-### CLI Commands
+### All Environment Variables
 
-```bash
-# Start API server
-python -m src.main run-server --host 127.0.0.1 --port 8000
-
-# Start scheduler for daily execution
-python -m src.main run-scheduler --time 09:00
-
-# Manually trigger pipeline
-python -m src.main trigger-pipeline --url https://blog.bytebytego.com
-
-# Check API health
-python -m src.main health
-
-# Quick blog generation (bypasses crawling)
-python generate_blog.py
-```
-
-### Programmatic Usage
-
-```python
-from src.agents import ExtractorAgent, WriterAgent
-from src.memory import MemorySystem
-
-# Extract content
-extractor = ExtractorAgent()
-content = await extractor.extract(html, url)
-
-# Generate blog post
-writer = WriterAgent()
-post = await writer.generate(content)
-
-# Check for duplicates
-memory = MemorySystem()
-await memory.initialize()
-embedding = await memory.compute_embedding(content.text_content)
-is_duplicate = await memory.check_duplicate(embedding)
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DEVTO_API_TOKEN` | `""` | DEV.to API key for publishing |
+| `DEVTO_EMAIL` | `""` | DEV.to email (for session auth) |
+| `DEVTO_PASSWORD` | `""` | DEV.to password (for session auth) |
+| `PUBLISH_TO_DEVTO` | `false` | Enable DEV.to publishing |
+| `MEDIUM_API_TOKEN` | `""` | Medium API token |
+| `PUBLISH_TO_MEDIUM` | `false` | Enable Medium publishing |
+| `OLLAMA_ENDPOINT` | `http://localhost:11434` | Ollama API URL |
+| `OLLAMA_MODEL` | `gemma:7b` | Model for content generation |
+| `OLLAMA_API_KEY` | `""` | API key for cloud Ollama |
+| `OLLAMA_TEMPERATURE` | `0.7` | Generation temperature (0.0–2.0) |
+| `OLLAMA_MAX_TOKENS` | `2000` | Max tokens per generation |
+| `OLLAMA_TIMEOUT` | `120` | Request timeout in seconds |
+| `CRAWLER_START_URL` | `https://blog.bytebytego.com` | Default crawl starting URL |
+| `CRAWLER_MAX_ACTIONS` | `50` | Max ReAct loop iterations |
+| `CRAWLER_HEADLESS` | `true` | Run Playwright headlessly |
+| `SCHEDULE_TIME` | `09:00` | Daily pipeline trigger time (HH:MM) |
+| `SCHEDULE_ENABLED` | `true` | Enable the built-in scheduler |
+| `DUPLICATE_THRESHOLD` | `0.85` | FAISS cosine similarity threshold |
+| `REVIEW_SIMILARITY_THRESHOLD` | `0.70` | Reviewer plagiarism threshold |
+| `MIN_WORD_COUNT` | `800` | Minimum blog post word count |
+| `MAX_WORD_COUNT` | `1500` | Maximum blog post word count |
+| `API_HOST` | `0.0.0.0` | Server bind address |
+| `PORT` / `API_PORT` | `8000` | Server port (PORT for Render) |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `LOG_FORMAT` | `json` | Log format (json/text) |
+| `LOG_FILE` | `logs/agent.log` | Log file path |
 
 ---
 
-## 🎨 Sample Generated Content
-
-### Architecture Diagrams
-
-The system generates beautiful Mermaid diagrams like this:
-
-```mermaid
-graph TB
-    Client[User Client] --> LB[Load Balancer]
-    LB --> Gateway[API Gateway]
-    Gateway --> Bus[Message Bus]
-    Bus --> Worker[Workers]
-    Worker --> DB[(Database)]
-    Worker --> Cache[Redis Cache]
-```
-
-### Blog Post Structure
-
-```markdown
-# How Telegram Scales to 800M Users
-
-**Source:** https://telegram.org/blog
-**Generated:** 2026-04-11 13:36:14
-**Word Count:** 693
-**Tags:** system-design, scalability, distributed-systems
-
----
-
-[Architecture diagram]
-
-## The Challenge
-[Problem description]
-
-## The Architecture
-[Solution with diagrams]
-
-## Trade-offs
-[Pros and cons analysis]
-
-## Key Takeaways
-[Actionable insights]
-```
-
----
-
-## 🔧 Troubleshooting
+## 🔮 Troubleshooting
 
 ### Common Issues
 
-**Q: Crawler returns 0 items**
+**Crawler returns 0 items**
 ```bash
-# Solution: Site may block crawling
-# System automatically uses fallback content
-# Check logs for robots.txt blocks
+# Solution: Some sites block automated browsers
+# The system uses fallback content from the companies database
+# Check logs: grep "CrawlerAgent" logs/agent.log
 ```
 
-**Q: Ollama connection refused**
+**Ollama connection refused**
 ```bash
 # Start Ollama
 ollama serve
 
-# Pull model
+# Pull the model
 ollama pull gemma:7b
 
 # Test connection
 curl http://localhost:11434/api/tags
 ```
 
-**Q: Playwright fails to launch**
+**Memory errors on cloud deployment**
 ```bash
-# Reinstall browsers
-playwright install
-
-# Check Python version (use 3.12+)
-python --version
+# The system uses fastembed (~80MB) instead of sentence-transformers (~200MB)
+# If still OOM, increase instance memory or reduce CRAWLER_MAX_ACTIONS
 ```
 
-### Logs
+**Playwright fails to launch**
+```bash
+# Reinstall browsers (required after fresh install)
+playwright install
+
+# On Linux/Render, install system dependencies
+playwright install-deps
+```
+
+### Viewing Logs
 
 ```bash
-# View recent logs
+# Tail live logs
 tail -f logs/agent.log
 
 # Filter by agent
-grep "CrawlerAgent" logs/agent.log
+cat logs/agent.log | python -m json.tool | grep "CrawlerAgent"
 
-# View screenshots
-ls logs/screenshots/
+# Human-readable format (development)
+python main.py --log-format text run-server
 ```
+
+---
+
+## 📊 Performance
+
+| Metric | Value |
+|--------|-------|
+| **Companies Database** | 500+ companies, 16 categories |
+| **Blog Post Length** | 800–1500 words |
+| **Pipeline Duration** | 5–10 minutes per post |
+| **Memory Peak** | ~410MB (during crawl + review) |
+| **Startup Time** | < 3 seconds to port binding |
+| **Duplicate Detection** | 0.85 cosine similarity threshold |
+| **SEO Score** | 70–85/100 (typical) |
+| **Platform Variants** | 5 per post (LinkedIn, Twitter, DEV.to, Hashnode, Medium) |
 
 ---
 
@@ -629,7 +587,7 @@ ls logs/screenshots/
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
@@ -647,21 +605,10 @@ black src/
 
 # Type check
 mypy src/
+
+# Run property-based tests
+pytest tests/ -v --hypothesis-show-statistics
 ```
-
----
-
-## 📊 Performance
-
-| Metric | Value |
-|--------|-------|
-| **Companies Database** | 149 companies |
-| **Categories** | 16 categories |
-| **AI/ML Topics** | 150+ topics |
-| **Avg. Blog Length** | 800-1500 words |
-| **Success Rate** | 100% |
-| **Duplicate Detection** | FAISS embeddings |
-| **Pipeline Duration** | 5-10 minutes per post |
 
 ---
 
@@ -673,21 +620,18 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ## 🙏 Acknowledgments
 
-- **LangGraph** for workflow orchestration
-- **Playwright** for browser automation
-- **FAISS** for vector similarity search
-- **Ollama** for local LLM inference
-- **Three.js** for 3D visualization
-- **ByteByteGo** for system design inspiration
+- **LangGraph** — Workflow orchestration with conditional branching
+- **Playwright** — Browser automation for the ReAct crawler
+- **FAISS** — Vector similarity search for duplicate detection
+- **fastembed** — Lightweight ONNX embeddings for memory-constrained environments
+- **Ollama** — Local LLM inference with Gemma
+- **Trafilatura** — Web article content extraction
+- **Three.js** — 3D visualization in the dashboard
+- **ByteByteGo** — System design content inspiration
 
 ---
 
 <p align="center">
   <b>Made with ❤️ for autonomous content generation</b><br>
   <i>Star ⭐ this repo if you find it useful!</i>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/github/stars/your-org/blog-agent?style=social" alt="GitHub Stars">
-  <img src="https://img.shields.io/github/forks/your-org/blog-agent?style=social" alt="GitHub Forks">
 </p>

@@ -1,4 +1,9 @@
-"""SEO Agent for optimizing blog content for search engines and social media."""
+"""SEO Agent for optimizing blog content for search engines and social media.
+
+Uses LLM (Ollama) for high-impact creative tasks (meta titles, descriptions,
+LinkedIn posts, Twitter threads) while keeping structural and scoring logic
+rule-based for speed and reliability.
+"""
 
 import re
 import json
@@ -8,9 +13,12 @@ from datetime import datetime
 from typing import Any
 from dataclasses import dataclass, field
 
+import httpx
+
 from src.config import Config, get_config
 from src.logging_config import get_logger
 from src.models.data_models import BlogPost
+from src.utils.retry import retry_with_backoff
 
 logger = get_logger(__name__)
 
@@ -96,6 +104,20 @@ class SEOAgent:
     def __init__(self, config: Config | None = None):
         self.config = config or get_config()
 
+        # LLM client for enhanced content generation
+        self.ollama_endpoint = self.config.ollama_endpoint
+        self.model = self.config.ollama_model
+
+        headers = {"Content-Type": "application/json"}
+        if self.config.ollama_api_key:
+            headers["Authorization"] = f"Bearer {self.config.ollama_api_key}"
+
+        self.client = httpx.AsyncClient(
+            base_url=self.ollama_endpoint.rstrip('/'),
+            timeout=self.config.ollama_timeout,
+            headers=headers
+        )
+
         self.stop_words = {
             'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
             'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
@@ -138,25 +160,61 @@ class SEOAgent:
             'devops': ['ci/cd', 'infrastructure as code', 'monitoring', 'deployment'],
         }
 
-        logger.info("SEOAgent initialized", extra={"agent": "SEOAgent"})
+        logger.info(
+            "SEOAgent initialized (LLM-enhanced)",
+            extra={"agent": "SEOAgent", "model": self.model}
+        )
 
     # ─────────────────────────────────────────────────────────────
     # Public API
     # ─────────────────────────────────────────────────────────────
 
-    def optimize(self, post: BlogPost) -> tuple[BlogPost, SEOMetadata, SEOScore, PlatformContent]:
+    async def _call_llm(self, prompt: str, system: str = "", max_tokens: int = 512, temperature: float = 0.6) -> str:
+        """
+        Call Ollama LLM for SEO content generation.
+
+        Args:
+            prompt: User prompt with the task.
+            system: System-level instructions.
+            max_tokens: Max response tokens.
+            temperature: Creativity level (lower = more focused).
+
+        Returns:
+            Generated text from LLM.
+        """
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": temperature,
+                "num_predict": max_tokens,
+            },
+        }
+        if system:
+            payload["system"] = system
+
+        response = await self.client.post("/api/generate", json=payload)
+        response.raise_for_status()
+        return response.json().get("response", "").strip()
+
+    async def optimize(self, post: BlogPost) -> tuple[BlogPost, SEOMetadata, SEOScore, PlatformContent]:
         """
         Optimize blog post for SEO and generate all platform content.
+        Uses LLM for meta titles, descriptions, and social media content.
 
         Returns:
             (optimized_post, seo_metadata, seo_score, platform_content)
         """
-        logger.info(f"Optimizing post for SEO: {post.title}", extra={"agent": "SEOAgent"})
+        logger.info(f"Optimizing post for SEO (LLM-enhanced): {post.title}", extra={"agent": "SEOAgent"})
 
         keywords = self._extract_keywords(post.content)
         lsi_keywords = self._expand_lsi_keywords(keywords)
-        meta_title = self._generate_meta_title(post.title, keywords)
-        meta_description = self._generate_meta_description(post.content, keywords)
+
+        # LLM-enhanced meta generation with rule-based fallbacks
+        meta_title = await self._generate_meta_title(post.title, keywords, post.content)
+        meta_description = await self._generate_meta_description(post.content, keywords, post.title)
+
         optimized_content = self._optimize_content_structure(post.content, keywords)
         toc = self._generate_table_of_contents(optimized_content)
 
@@ -203,11 +261,12 @@ class SEOAgent:
             table_of_contents=toc,
         )
 
-        platform_content = self._generate_platform_content(post, keywords, lsi_keywords, reading_time)
+        # LLM-enhanced platform content generation
+        platform_content = await self._generate_platform_content(post, keywords, lsi_keywords, reading_time)
         seo_score = self._calculate_seo_score(optimized_post, seo_metadata, platform_content)
 
         logger.info(
-            f"SEO optimization complete: Score {seo_score.overall}/100",
+            f"SEO optimization complete (LLM-enhanced): Score {seo_score.overall}/100",
             extra={
                 "agent": "SEOAgent",
                 "seo_score": seo_score.overall,
@@ -294,15 +353,14 @@ class SEOAgent:
     # Meta Generation
     # ─────────────────────────────────────────────────────────────
 
-    def _generate_meta_title(self, title: str, keywords: list[str]) -> str:
-        """Generate SEO-optimized meta title (50-60 characters)."""
+    def _fallback_meta_title(self, title: str, keywords: list[str]) -> str:
+        """Rule-based fallback for meta title generation."""
         clean_title = re.sub(r'[^\w\s:\-|]', '', title).strip()
 
         if 50 <= len(clean_title) <= 60:
             return clean_title
 
         if len(clean_title) < 50 and keywords:
-            # Try adding a keyword suffix
             suffix = keywords[0].title()
             candidate = f"{clean_title} | {suffix}"
             if len(candidate) <= 60:
@@ -318,8 +376,36 @@ class SEOAgent:
 
         return clean_title
 
-    def _generate_meta_description(self, content: str, keywords: list[str]) -> str:
-        """Generate SEO-optimized meta description (150-160 characters)."""
+    async def _generate_meta_title(self, title: str, keywords: list[str], content: str = "") -> str:
+        """LLM-enhanced SEO meta title (50-60 characters)."""
+        try:
+            kw_str = ", ".join(keywords[:5]) if keywords else "technology"
+            prompt = (
+                f"Write ONE SEO-optimized title for a blog post.\n"
+                f"Original title: {title}\n"
+                f"Target keywords: {kw_str}\n\n"
+                f"Rules:\n"
+                f"- MUST be between 50 and 60 characters (this is critical)\n"
+                f"- Include the primary keyword naturally\n"
+                f"- Use a power word (e.g., Ultimate, Essential, Proven, Deep Dive)\n"
+                f"- Make it click-worthy but not clickbait\n"
+                f"- Do NOT use quotes around the title\n\n"
+                f"Reply with ONLY the title text, nothing else."
+            )
+            result = await self._call_llm(prompt, max_tokens=80, temperature=0.5)
+            # Clean LLM output
+            result = result.strip().strip('"').strip("'").split("\n")[0].strip()
+            # Validate length constraint
+            if 30 <= len(result) <= 70:
+                logger.info(f"LLM meta title: '{result}' ({len(result)} chars)", extra={"agent": "SEOAgent"})
+                return result[:60]
+        except Exception as e:
+            logger.warning(f"LLM meta title failed, using fallback: {e}", extra={"agent": "SEOAgent"})
+
+        return self._fallback_meta_title(title, keywords)
+
+    def _fallback_meta_description(self, content: str, keywords: list[str]) -> str:
+        """Rule-based fallback for meta description generation."""
         paragraphs = content.split('\n\n')
         first_para = ""
         for para in paragraphs:
@@ -341,7 +427,6 @@ class SEOAgent:
             last_space = truncated.rfind(' ')
             return (truncated[:last_space] + "...") if last_space > 100 else truncated + "..."
 
-        # Build from keywords if paragraph is too short
         if keywords:
             base = f"Learn {keywords[0]} with practical examples and best practices."
             if len(keywords) > 1:
@@ -351,6 +436,34 @@ class SEOAgent:
             return base[:157] + "..."
 
         return clean_para
+
+    async def _generate_meta_description(self, content: str, keywords: list[str], title: str = "") -> str:
+        """LLM-enhanced SEO meta description (150-160 characters)."""
+        try:
+            kw_str = ", ".join(keywords[:5]) if keywords else "technology"
+            # Give the LLM first 500 chars of content for context
+            excerpt = re.sub(r'[#*`\[\]()]', '', content[:500]).strip()
+            prompt = (
+                f"Write ONE meta description for a blog post about: {title}\n"
+                f"Content excerpt: {excerpt}\n"
+                f"Target keywords: {kw_str}\n\n"
+                f"Rules:\n"
+                f"- MUST be between 145 and 160 characters (this is critical for SEO)\n"
+                f"- Include the primary keyword in the first 60 characters\n"
+                f"- Use an action verb (learn, discover, explore, master, build)\n"
+                f"- End with a benefit or value proposition\n"
+                f"- Do NOT use quotes\n\n"
+                f"Reply with ONLY the description text, nothing else."
+            )
+            result = await self._call_llm(prompt, max_tokens=120, temperature=0.5)
+            result = result.strip().strip('"').strip("'").split("\n")[0].strip()
+            if 100 <= len(result) <= 180:
+                logger.info(f"LLM meta description ({len(result)} chars)", extra={"agent": "SEOAgent"})
+                return result[:160]
+        except Exception as e:
+            logger.warning(f"LLM meta description failed, using fallback: {e}", extra={"agent": "SEOAgent"})
+
+        return self._fallback_meta_description(content, keywords)
 
     # ─────────────────────────────────────────────────────────────
     # Content Structure
@@ -568,36 +681,29 @@ class SEOAgent:
     # Platform-Specific Content Generation
     # ─────────────────────────────────────────────────────────────
 
-    def _generate_platform_content(
+    async def _generate_platform_content(
         self,
         post: BlogPost,
         keywords: list[str],
         lsi_keywords: list[str],
         reading_time: int
     ) -> PlatformContent:
-        """Generate tailored content for every publishing platform."""
+        """Generate tailored content for every publishing platform (LLM-enhanced)."""
         pc = PlatformContent()
 
-        pc.linkedin_post, pc.linkedin_hashtags = self._generate_linkedin_post(post, keywords, reading_time)
-        pc.twitter_thread, pc.twitter_hashtags = self._generate_twitter_thread(post, keywords)
+        pc.linkedin_post, pc.linkedin_hashtags = await self._generate_linkedin_post(post, keywords, reading_time)
+        pc.twitter_thread, pc.twitter_hashtags = await self._generate_twitter_thread(post, keywords)
         pc.devto_front_matter, pc.devto_tags = self._generate_devto_front_matter(post, keywords)
         pc.hashnode_front_matter = self._generate_hashnode_front_matter(post, keywords)
         pc.medium_canonical_note = self._generate_medium_canonical_note(post)
-        pc.short_teaser = self._generate_short_teaser(post, keywords, reading_time)
+        pc.short_teaser = await self._generate_short_teaser(post, keywords, reading_time)
 
         return pc
 
-    def _generate_linkedin_post(
+    def _fallback_linkedin_post(
         self, post: BlogPost, keywords: list[str], reading_time: int
     ) -> tuple[str, list[str]]:
-        """
-        Generate a LinkedIn post with:
-        - Pattern-interrupt hook (first line = stop-the-scroll)
-        - 3-5 key takeaways as bullets
-        - CTA with article link
-        - Hashtags
-        """
-        # Extract key insights from H2/H3 headings
+        """Rule-based fallback for LinkedIn post generation."""
         headings = re.findall(r'^#{2,3} (.+)$', post.content, re.MULTILINE)
         insights = [h for h in headings if not h.lower().startswith('table')][:4]
 
@@ -625,15 +731,69 @@ What would you add? Drop it in the comments 👇{cta}
 
         return post_text, hashtags
 
-    def _generate_twitter_thread(
+    async def _generate_linkedin_post(
+        self, post: BlogPost, keywords: list[str], reading_time: int
+    ) -> tuple[str, list[str]]:
+        """
+        LLM-enhanced LinkedIn post with:
+        - Pattern-interrupt hook (first line = stop-the-scroll)
+        - 3-5 key takeaways as bullets
+        - CTA with article link
+        - Hashtags
+        """
+        hashtags = self._generate_hashtags(keywords, platform="linkedin")
+
+        try:
+            url = post.source_url or ""
+            excerpt = re.sub(r'[#*`\[\]()]', '', post.content[:1000]).strip()
+            kw_str = ", ".join(keywords[:5]) if keywords else "technology"
+
+            system = (
+                "You are a LinkedIn content strategist who writes viral tech posts. "
+                "Your posts get 10x more engagement than average because you use "
+                "pattern-interrupt hooks, concrete insights, and genuine curiosity."
+            )
+            prompt = (
+                f"Write a LinkedIn post promoting this blog article.\n\n"
+                f"Title: {post.title}\n"
+                f"Keywords: {kw_str}\n"
+                f"Content excerpt: {excerpt}\n"
+                f"Reading time: {reading_time} min\n"
+                f"Article URL: {url}\n\n"
+                f"Format:\n"
+                f"1. First line: a bold, pattern-interrupt hook (make them stop scrolling)\n"
+                f"2. Empty line\n"
+                f"3. 3-5 key insights as bullet points using → arrows\n"
+                f"4. Empty line\n"
+                f"5. Engagement question (ask readers to share their experience)\n"
+                f"6. CTA linking to the full article with reading time\n\n"
+                f"Rules:\n"
+                f"- No emojis in the hook (except one at the end)\n"
+                f"- Use metrics or surprising facts when possible\n"
+                f"- Keep each bullet to one line, max 15 words\n"
+                f"- Do NOT include hashtags — I'll add them separately\n"
+                f"- Total post: 800-1300 characters\n\n"
+                f"Reply with ONLY the post text."
+            )
+            result = await self._call_llm(prompt, system=system, max_tokens=400, temperature=0.7)
+            result = result.strip()
+
+            if len(result) > 200:
+                # Append hashtags
+                hashtag_str = " ".join(f"#{h}" for h in hashtags[:8])
+                result = f"{result}\n\n{hashtag_str}"
+                logger.info(f"LLM LinkedIn post generated ({len(result)} chars)", extra={"agent": "SEOAgent"})
+                return result, hashtags
+
+        except Exception as e:
+            logger.warning(f"LLM LinkedIn post failed, using fallback: {e}", extra={"agent": "SEOAgent"})
+
+        return self._fallback_linkedin_post(post, keywords, reading_time)
+
+    def _fallback_twitter_thread(
         self, post: BlogPost, keywords: list[str]
     ) -> tuple[list[str], list[str]]:
-        """
-        Generate a Twitter/X thread:
-        - Tweet 1: hook
-        - Tweets 2-7: one key insight each (≤280 chars)
-        - Last tweet: CTA + hashtags
-        """
+        """Rule-based fallback for Twitter thread generation."""
         headings = re.findall(r'^#{2,3} (.+)$', post.content, re.MULTILINE)
         clean_headings = [h for h in headings if not h.lower().startswith('table')][:6]
 
@@ -641,15 +801,11 @@ What would you add? Drop it in the comments 👇{cta}
         hashtag_str = " ".join(f"#{h}" for h in hashtags[:3])
 
         thread = []
-
-        # Tweet 1 — hook
         hook = f"🧵 {post.title}\n\nA thread on what every engineer should know:"
         thread.append(hook[:280])
 
-        # Tweets 2-7 — insights from headings
         for i, heading in enumerate(clean_headings, 2):
             tweet = f"{i}/ {heading}\n\n"
-            # Try to grab first sentence of that section
             pattern = re.compile(
                 rf'^#{2,3} {re.escape(heading)}\n\n([^\n#`]{{20,200}})',
                 re.MULTILINE
@@ -660,7 +816,6 @@ What would you add? Drop it in the comments 👇{cta}
                 tweet += snippet
             thread.append(tweet[:280])
 
-        # Final tweet — CTA
         url = post.source_url or ""
         cta_tweet = f"{len(thread) + 1}/ Full article with code examples + diagrams:"
         if url:
@@ -669,6 +824,66 @@ What would you add? Drop it in the comments 👇{cta}
         thread.append(cta_tweet[:280])
 
         return thread, hashtags
+
+    async def _generate_twitter_thread(
+        self, post: BlogPost, keywords: list[str]
+    ) -> tuple[list[str], list[str]]:
+        """
+        LLM-enhanced Twitter/X thread:
+        - Tweet 1: hook
+        - Tweets 2-6: one key insight each (≤280 chars)
+        - Last tweet: CTA + hashtags
+        """
+        hashtags = self._generate_hashtags(keywords, platform="twitter")
+
+        try:
+            excerpt = re.sub(r'[#*`\[\]()]', '', post.content[:1500]).strip()
+            url = post.source_url or ""
+            kw_str = ", ".join(keywords[:5]) if keywords else "technology"
+            hashtag_str = " ".join(f"#{h}" for h in hashtags[:3])
+
+            system = (
+                "You are a tech Twitter influencer. You write threads that "
+                "get massive engagement by distilling complex topics into "
+                "sharp, insightful tweets engineers love to retweet."
+            )
+            prompt = (
+                f"Write a Twitter/X thread (5-7 tweets) about this blog post.\n\n"
+                f"Title: {post.title}\n"
+                f"Keywords: {kw_str}\n"
+                f"Content: {excerpt}\n"
+                f"Article URL: {url}\n\n"
+                f"Format each tweet as:\n"
+                f"1/ [hook tweet]\n\n"
+                f"2/ [insight]\n\n"
+                f"..etc\n\n"
+                f"Rules:\n"
+                f"- Each tweet MUST be under 280 characters\n"
+                f"- Tweet 1 is the hook — start with 🧵 and a bold claim or question\n"
+                f"- Tweets 2-5 each share one specific, concrete insight\n"
+                f"- Use numbers, metrics, or analogies when possible\n"
+                f"- Last tweet is CTA: link to article + hashtags {hashtag_str}\n"
+                f"- No filler. Every word earns its place.\n\n"
+                f"Reply with ONLY the numbered tweets."
+            )
+            result = await self._call_llm(prompt, system=system, max_tokens=600, temperature=0.7)
+
+            # Parse numbered tweets from LLM output
+            raw_tweets = re.split(r'\n\d+[/.)\s]', "\n" + result.strip())
+            thread = []
+            for t in raw_tweets:
+                t = t.strip()
+                if t and len(t) > 20:
+                    thread.append(t[:280])
+
+            if len(thread) >= 3:
+                logger.info(f"LLM Twitter thread generated ({len(thread)} tweets)", extra={"agent": "SEOAgent"})
+                return thread, hashtags
+
+        except Exception as e:
+            logger.warning(f"LLM Twitter thread failed, using fallback: {e}", extra={"agent": "SEOAgent"})
+
+        return self._fallback_twitter_thread(post, keywords)
 
     def _generate_devto_front_matter(
         self, post: BlogPost, keywords: list[str]
@@ -763,13 +978,39 @@ publishedAt: {post.generated_at.strftime('%Y-%m-%dT%H:%M:%SZ')}
             f"*Originally published at [{post.source_url}]({post.source_url})*"
         )
 
-    def _generate_short_teaser(
+    async def _generate_short_teaser(
         self, post: BlogPost, keywords: list[str], reading_time: int
     ) -> str:
         """
-        Generate a short teaser (≤300 chars) for newsletters, Slack, etc.
+        LLM-enhanced short teaser (≤300 chars) for newsletters, Slack, etc.
         """
-        desc = self._generate_meta_description(post.content, keywords)
+        try:
+            excerpt = re.sub(r'[#*`\[\]()]', '', post.content[:500]).strip()
+            url = post.source_url or ""
+            prompt = (
+                f"Write a one-sentence teaser for this blog post to share in newsletters and Slack.\n\n"
+                f"Title: {post.title}\n"
+                f"Content preview: {excerpt}\n"
+                f"Reading time: {reading_time} min\n\n"
+                f"Rules:\n"
+                f"- Start with 📝 emoji\n"
+                f"- Max 250 characters (before URL)\n"
+                f"- Create curiosity — make them click\n"
+                f"- Include the reading time at the end like '(X min read)'\n"
+                f"- Do NOT include a URL\n\n"
+                f"Reply with ONLY the teaser text."
+            )
+            result = await self._call_llm(prompt, max_tokens=100, temperature=0.6)
+            result = result.strip().strip('"').split("\n")[0].strip()
+            if len(result) > 50:
+                if url:
+                    result = f"{result[:250]} {url}"
+                return result[:300]
+        except Exception as e:
+            logger.warning(f"LLM teaser failed, using fallback: {e}", extra={"agent": "SEOAgent"})
+
+        # Fallback
+        desc = self._fallback_meta_description(post.content, keywords)
         url = post.source_url or ""
         teaser = f"📝 {post.title} — {desc[:150]}... ({reading_time} min read)"
         if url:

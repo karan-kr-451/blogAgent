@@ -351,9 +351,9 @@ async def seo_node(state: WorkflowState) -> WorkflowState:
         else:
             blog_post = draft_data
 
-        # Run SEO optimization (now returns 4 values including platform content)
+        # Run LLM-enhanced SEO optimization (async for Ollama calls)
         seo_agent = SEOAgent()
-        optimized_post, seo_metadata, seo_score, platform_content = seo_agent.optimize(blog_post)
+        optimized_post, seo_metadata, seo_score, platform_content = await seo_agent.optimize(blog_post)
 
         # Merge SEO data into draft dict
         state["draft"]["content"] = optimized_post.content
