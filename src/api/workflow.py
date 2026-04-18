@@ -159,13 +159,25 @@ async def check_duplicate_node(state: WorkflowState) -> WorkflowState:
         
         if is_duplicate:
             logger.info(f"Duplicate content detected: {state['current_item']['title']}", extra={"agent": "Workflow"})
+        else:
+            # INTEGRATION: Store new research content in memory for knowledge-based comment responding
+            from src.models.data_models import ContentItem
+            cur = state["current_item"]
+            research_item = ContentItem(
+                title=cur.get("title", "Untitled"),
+                text_content=cur.get("text_content", ""),
+                url=cur.get("url", state["start_url"]),
+                metadata=cur.get("metadata", {})
+            )
+            await memory.store(research_item, embedding, content_type="research")
+            logger.info(f"New research content stored in knowledge base: {research_item.title}", extra={"agent": "Workflow"})
         
         return {
             **state,
             "is_duplicate": is_duplicate
         }
     except Exception as e:
-        logger.error(f"Duplicate check failed: {e}", extra={"agent": "Workflow"})
+        logger.error(f"Duplicate check / memory storage failed: {e}", extra={"agent": "Workflow"})
         return {**state, "is_duplicate": False}
 
 async def writer_node(state: WorkflowState) -> WorkflowState:

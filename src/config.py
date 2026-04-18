@@ -165,9 +165,10 @@ class Config(BaseSettings):
     )
     api_port: int = Field(
         default=8000,
+        validation_alias="PORT",
         gt=0,
         lt=65536,
-        description="API server port"
+        description="API server port (automatically picks up PORT env var in production)"
     )
     
     # Logging Configuration

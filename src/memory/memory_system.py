@@ -108,13 +108,14 @@ class MemorySystem:
         index = faiss.IndexIDMap2(index)
         return index
 
-    async def store(self, content: ContentItem, embedding: np.ndarray) -> None:
+    async def store(self, content: ContentItem, embedding: np.ndarray, content_type: str = "blog_post") -> None:
         """
         Store content item with its embedding.
         
         Args:
             content: ContentItem to store
             embedding: Embedding vector for the content
+            content_type: Type of content ("blog_post" or "research")
         
         Raises:
             MemorySystemError: If storage fails
@@ -136,18 +137,25 @@ class MemorySystem:
             if self.index is None:
                 self.index = self._create_empty_index()
 
+            # Use the current number of entries as the FAISS ID
+            # This ensures FAISS search results directly map to the entries list index
+            faiss_id = len(self.metadata["entries"])
+            
             self.index.add_with_ids(
                 embedding.astype(np.float32),
-                np.array([hash(content_id) % 1000000], dtype=np.int64)
+                np.array([faiss_id], dtype=np.int64)
             )
             
             # Store metadata
             entry = {
                 "content_id": content_id,
+                "type": content_type,
                 "metadata": {
                     "title": content.title,
                     "url": content.url,
-                    "processed_at": datetime.utcnow().isoformat()
+                    "processed_at": datetime.utcnow().isoformat(),
+                    # Store a summary for RAG context
+                    "summary": content.text_content[:1500] if content_type == "research" else content.text_content[:1000]
                 }
             }
             self.metadata["entries"].append(entry)
@@ -157,11 +165,12 @@ class MemorySystem:
             await self.persist()
             
             logger.info(
-                f"Stored content: {content.title}",
+                f"Stored {content_type}: {content.title}",
                 extra={
                     "agent": "MemorySystem",
                     "content_id": content_id,
-                    "url": content.url
+                    "url": content.url,
+                    "type": content_type
                 }
             )
             
@@ -169,7 +178,7 @@ class MemorySystem:
             logger.error(f"Failed to store content: {e}", extra={"agent": "MemorySystem"})
             raise MemorySystemError(f"Failed to store content: {e}") from e
 
-    async def search(self, query: str, limit: int = 3) -> list[dict[str, Any]]:
+    async def search(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
         """
         Search for relevant content based on a text query.
         
@@ -197,15 +206,21 @@ class MemorySystem:
             
             results = []
             for i, idx in enumerate(indices[0]):
-                if idx != -1 and idx < len(self.metadata["entries"]):
-                    entry = self.metadata["entries"][int(idx)]
+                idx_int = int(idx)
+                if idx_int != -1 and idx_int < len(self.metadata["entries"]):
+                    entry = self.metadata["entries"][idx_int]
                     results.append({
-                        **entry,
+                        "content": {
+                            "title": entry["metadata"]["title"],
+                            "summary": entry["metadata"].get("summary", ""),
+                            "url": entry["metadata"]["url"],
+                            "type": entry.get("type", "unknown")
+                        },
                         "similarity_score": float(scores[0][i])
                     })
             
             return results
-            
+        
         except Exception as e:
             logger.error(f"Search failed: {e}", extra={"agent": "MemorySystem"})
             return []

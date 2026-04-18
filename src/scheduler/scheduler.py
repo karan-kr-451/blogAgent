@@ -175,21 +175,37 @@ class PipelineScheduler:
             extra={"agent": "Scheduler"}
         )
 
-        # Schedule daily run
-        schedule.every().day.at(schedule_time).do(self._run_pipeline_sync)
-        
-        # Schedule comment responder to run every hour
-        schedule.every().hour.do(self._run_comment_responder_sync)
+        last_daily_run = None
+        last_hourly_run = None
 
         while True:
             try:
-                # Check for pending tasks
-                schedule.run_pending()
+                now = datetime.now()
+                current_time = now.strftime("%H:%M")
+                
+                # 1. Check for daily pipeline run
+                # Using a small window or state check to ensure it runs only once at that minute
+                if current_time == schedule_time and last_daily_run != now.date():
+                    # Check connection before triggering (one-time check on startup)
+                    if last_daily_run is None:
+                        await asyncio.sleep(5) # Give the server a moment to start
+                    
+                    # Run in background to not block the scheduler loop
+                    asyncio.create_task(self.run_pipeline())
+                    last_daily_run = now.date()
+                    logger.info(f"Daily pipeline scheduled for {current_time} triggered.", extra={"agent": "Scheduler"})
+
+                # 2. Check for hourly comment responder
+                if now.minute == 0 and last_hourly_run != now.hour:
+                    asyncio.create_task(self.run_comment_responder())
+                    last_hourly_run = now.hour
+                    logger.info(f"Hourly comment responder triggered.", extra={"agent": "Scheduler"})
+
             except Exception as e:
                 logger.error(f"Scheduler error in loop: {e}", extra={"agent": "Scheduler"})
             
-            # Wait 60 seconds before next check
-            await asyncio.sleep(60)
+            # Wait 30 seconds before next check for higher precision
+            await asyncio.sleep(30)
 
     def _run_scheduler_loop(self):
         """Run the scheduler loop."""
@@ -203,55 +219,6 @@ class PipelineScheduler:
             logger.info("Scheduler stopped by user", extra={"agent": "Scheduler"})
         except Exception as e:
             logger.error(f"Scheduler loop failed: {e}", extra={"agent": "Scheduler"})
-
-    def _run_pipeline_sync(self):
-        """Run pipeline with its own event loop (called from sync scheduler)."""
-        logger.info("Scheduled pipeline run starting", extra={"agent": "Scheduler"})
-        
-        try:
-            # Create a new event loop for this execution
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-            try:
-                result = loop.run_until_complete(self.run_pipeline())
-                logger.info(
-                    f"Scheduled pipeline completed: {result.get('status', 'unknown')}",
-                    extra={"agent": "Scheduler"}
-                )
-            finally:
-                loop.close()
-                
-        except Exception as e:
-            logger.error(
-                f"Scheduled pipeline failed: {e}",
-                extra={"agent": "Scheduler"},
-                exc_info=True
-            )
-
-    def _run_comment_responder_sync(self):
-        """Run comment responder with its own event loop."""
-        logger.info("Scheduled comment responder run starting", extra={"agent": "Scheduler"})
-        
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-            try:
-                result = loop.run_until_complete(self.run_comment_responder())
-                logger.info(
-                    f"Scheduled comment responder completed: {result.get('status', 'unknown')}",
-                    extra={"agent": "Scheduler"}
-                )
-            finally:
-                loop.close()
-                
-        except Exception as e:
-            logger.error(
-                f"Scheduled comment responder failed: {e}",
-                extra={"agent": "Scheduler"},
-                exc_info=True
-            )
 
     def trigger_manual(self) -> dict[str, Any]:
         """
