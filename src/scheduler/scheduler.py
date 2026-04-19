@@ -2,8 +2,7 @@
 
 import asyncio
 import logging
-import schedule
-import time
+import os
 from datetime import datetime
 from typing import Any
 from pathlib import Path
@@ -34,18 +33,22 @@ class PipelineScheduler:
         """
         self.config = config or get_config()
         self.is_running = False
-        # For internal loopback calls, use localhost if binding to 0.0.0.0
-        host = self.config.api_host
+        # ALWAYS resolve host+port from env vars at runtime.
+        # config values can be stale; Render injects PORT dynamically.
+        # API_HOST may be "0.0.0.0" (bind-all) — not valid for loopback calls, coerce to 127.0.0.1.
+        port = int(os.environ.get("PORT", 8000))
+        host = os.environ.get("API_HOST", "127.0.0.1")
         if host == "0.0.0.0":
             host = "127.0.0.1"
-        self.api_base_url = f"http://{host}:{self.config.api_port}"
+        self.api_base_url = f"http://{host}:{port}"
         
         logger.info(
             "PipelineScheduler initialized",
             extra={
                 "agent": "Scheduler",
                 "schedule_time": self.config.schedule_time,
-                "schedule_enabled": self.config.schedule_enabled
+                "schedule_enabled": self.config.schedule_enabled,
+                "api_base_url": self.api_base_url,
             }
         )
 
@@ -131,34 +134,6 @@ class PipelineScheduler:
             )
             raise
 
-    def start(self, time: str | None = None):
-        """
-        Start scheduler with daily execution at specified time.
-
-        Args:
-            time: Time to run pipeline (HH:MM format). Uses config if None.
-        """
-        schedule_time = time or self.config.schedule_time
-
-        if not self.config.schedule_enabled:
-            logger.info("Scheduler is disabled, not starting", extra={"agent": "Scheduler"})
-            return
-
-        logger.info(
-            f"Starting scheduler with daily execution at {schedule_time}",
-            extra={
-                "agent": "Scheduler",
-                "schedule_time": schedule_time,
-                "api_url": self.api_base_url
-            }
-        )
-
-        # Schedule daily run - use sync wrapper that creates its own event loop
-        schedule.every().day.at(schedule_time).do(self._run_pipeline_sync)
-        
-        # Schedule comment responder to run every hour
-        schedule.every().hour.do(self._run_comment_responder_sync)
-
     async def start_async(self):
         """
         Start scheduler asynchronously (non-blocking).
@@ -206,19 +181,6 @@ class PipelineScheduler:
             
             # Wait 30 seconds before next check for higher precision
             await asyncio.sleep(30)
-
-    def _run_scheduler_loop(self):
-        """Run the scheduler loop."""
-        logger.info("Scheduler loop started", extra={"agent": "Scheduler"})
-
-        try:
-            while True:
-                schedule.run_pending()
-                time.sleep(60)  # Check every minute
-        except KeyboardInterrupt:
-            logger.info("Scheduler stopped by user", extra={"agent": "Scheduler"})
-        except Exception as e:
-            logger.error(f"Scheduler loop failed: {e}", extra={"agent": "Scheduler"})
 
     def trigger_manual(self) -> dict[str, Any]:
         """
