@@ -5,7 +5,6 @@ import logging
 import os
 from datetime import datetime
 from typing import Any
-from pathlib import Path
 
 import httpx
 
@@ -41,7 +40,11 @@ class PipelineScheduler:
         if host == "0.0.0.0":
             host = "127.0.0.1"
         self.api_base_url = f"http://{host}:{port}"
-        
+
+        # Render injects RENDER_EXTERNAL_URL with the public HTTPS URL of the service.
+        # We use this for keep-alive pings (internal loopback doesn't count as Render activity).
+        self.public_url = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
+
         logger.info(
             "PipelineScheduler initialized",
             extra={
@@ -49,6 +52,7 @@ class PipelineScheduler:
                 "schedule_time": self.config.schedule_time,
                 "schedule_enabled": self.config.schedule_enabled,
                 "api_base_url": self.api_base_url,
+                "keep_alive": bool(self.public_url),
             }
         )
 
@@ -134,6 +138,43 @@ class PipelineScheduler:
             )
             raise
 
+    async def _keep_alive(self) -> None:
+        """
+        Ping the service's own public URL every 10 minutes to prevent
+        Render's free tier from spinning the service down due to inactivity.
+
+        Uses RENDER_EXTERNAL_URL (auto-injected by Render) so the ping goes
+        through Render's load balancer and counts as real inbound traffic.
+        Does nothing when running locally (no RENDER_EXTERNAL_URL set).
+        """
+        if not self.public_url:
+            logger.info(
+                "No RENDER_EXTERNAL_URL set — keep-alive disabled (local env).",
+                extra={"agent": "Scheduler"}
+            )
+            return
+
+        ping_url = f"{self.public_url}/health"
+        logger.info(
+            f"Keep-alive started. Pinging {ping_url} every 10 minutes.",
+            extra={"agent": "Scheduler"}
+        )
+
+        while True:
+            await asyncio.sleep(10 * 60)  # 10 minutes
+            try:
+                async with httpx.AsyncClient(timeout=10) as client:
+                    resp = await client.get(ping_url)
+                logger.info(
+                    f"Keep-alive ping OK ({resp.status_code})",
+                    extra={"agent": "Scheduler"}
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Keep-alive ping failed: {e}",
+                    extra={"agent": "Scheduler"}
+                )
+
     async def start_async(self):
         """
         Start scheduler asynchronously (non-blocking).
@@ -150,36 +191,60 @@ class PipelineScheduler:
             extra={"agent": "Scheduler"}
         )
 
+        # Launch keep-alive concurrently so Render free tier stays awake
+        asyncio.create_task(self._keep_alive())
+
         last_daily_run = None
         last_hourly_run = None
+
+        # ── Startup catch-up ─────────────────────────────────────────────────
+        # If today's scheduled time has ALREADY passed when the service starts
+        # (e.g. deployed at 09:38 when schedule is 09:00), run the pipeline
+        # immediately instead of waiting until tomorrow.
+        now = datetime.now()
+        sched_hour, sched_minute = map(int, schedule_time.split(":"))
+        sched_today = now.replace(hour=sched_hour, minute=sched_minute, second=0, microsecond=0)
+
+        if now >= sched_today:
+            logger.info(
+                f"Scheduled time {schedule_time} already passed today "
+                f"(server started at {now.strftime('%H:%M')}). "
+                "Triggering pipeline now as startup catch-up.",
+                extra={"agent": "Scheduler"}
+            )
+            # Wait 15 s so the server is fully initialised before hitting /pipeline/trigger
+            await asyncio.sleep(15)
+            asyncio.create_task(self.run_pipeline())
+            last_daily_run = now.date()
+        # ─────────────────────────────────────────────────────────────────────
 
         while True:
             try:
                 now = datetime.now()
                 current_time = now.strftime("%H:%M")
-                
-                # 1. Check for daily pipeline run
-                # Using a small window or state check to ensure it runs only once at that minute
+
+                # 1. Daily pipeline — fires once at the scheduled minute
                 if current_time == schedule_time and last_daily_run != now.date():
-                    # Check connection before triggering (one-time check on startup)
-                    if last_daily_run is None:
-                        await asyncio.sleep(5) # Give the server a moment to start
-                    
-                    # Run in background to not block the scheduler loop
                     asyncio.create_task(self.run_pipeline())
                     last_daily_run = now.date()
-                    logger.info(f"Daily pipeline scheduled for {current_time} triggered.", extra={"agent": "Scheduler"})
+                    logger.info(
+                        f"Daily pipeline triggered at {current_time}.",
+                        extra={"agent": "Scheduler"}
+                    )
 
-                # 2. Check for hourly comment responder
+                # 2. Hourly comment responder — fires at the top of every hour
                 if now.minute == 0 and last_hourly_run != now.hour:
                     asyncio.create_task(self.run_comment_responder())
                     last_hourly_run = now.hour
-                    logger.info(f"Hourly comment responder triggered.", extra={"agent": "Scheduler"})
+                    logger.info(
+                        f"Hourly comment responder triggered at {now.strftime('%H:%M')}.",
+                        extra={"agent": "Scheduler"}
+                    )
 
             except Exception as e:
                 logger.error(f"Scheduler error in loop: {e}", extra={"agent": "Scheduler"})
-            
-            # Wait 30 seconds before next check for higher precision
+
+            # Check every 30 seconds (catches any minute window)
             await asyncio.sleep(30)
 
     def trigger_manual(self) -> dict[str, Any]:
