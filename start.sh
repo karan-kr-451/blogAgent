@@ -27,5 +27,9 @@ export MEMORY_INDEX_PATH="$DATA_ROOT/memory/vectors.index"
 export MEMORY_METADATA_PATH="$DATA_ROOT/memory/metadata.json"
 
 # Start the application
+# Ensure Playwright browsers are installed (Render UI build commands often miss this)
+echo "==> Ensuring Playwright browsers are installed..."
+playwright install chromium || echo "Playwright install skipped or failed"
+
 # Port is automatically resolved from $PORT environment variable in main.py
 python3 main.py run-server --host 0.0.0.0
