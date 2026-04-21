@@ -7,7 +7,7 @@ from typing import Any
 from collections import Counter
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
 from src.config import Config, get_config
 from src.logging_config import get_logger
@@ -39,7 +39,7 @@ class ReviewerAgent:
         """
         self.config = config or get_config()
         self.similarity_threshold = self.config.review_similarity_threshold
-        self.embedding_model: SentenceTransformer | None = None
+        self.embedding_model: TextEmbedding | None = None
         self.memory_system = MemorySystem(config=self.config)
         
         logger.info(
@@ -53,8 +53,8 @@ class ReviewerAgent:
     async def initialize(self) -> None:
         """Initialize the embedding model."""
         if self.embedding_model is None:
-            logger.info("Loading embedding model for review")
-            self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            logger.info("Loading embedding model for review via fastembed")
+            self.embedding_model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
             logger.info("Embedding model loaded for review")
         
         await self.memory_system.initialize()
@@ -129,8 +129,8 @@ class ReviewerAgent:
         """
         try:
             # Encode both texts
-            post_embedding = self.embedding_model.encode(post.content)
-            source_embedding = self.embedding_model.encode(source.text_content)
+            post_embedding = list(self.embedding_model.embed([post.content]))[0]
+            source_embedding = list(self.embedding_model.embed([source.text_content]))[0]
             
             # Normalize
             post_embedding = post_embedding / np.linalg.norm(post_embedding)
