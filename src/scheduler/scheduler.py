@@ -194,6 +194,10 @@ class PipelineScheduler:
         # Launch keep-alive concurrently so Render free tier stays awake
         asyncio.create_task(self._keep_alive())
 
+        # Wait 15 seconds to ensure the FastAPI app and Uvicorn have fully started
+        # and bound to the port before we attempt to make any loopback HTTP calls.
+        await asyncio.sleep(15)
+
         last_daily_run = None
         last_hourly_run = None
 
@@ -212,8 +216,6 @@ class PipelineScheduler:
                 "Triggering pipeline now as startup catch-up.",
                 extra={"agent": "Scheduler"}
             )
-            # Wait 15 s so the server is fully initialised before hitting /pipeline/trigger
-            await asyncio.sleep(15)
             asyncio.create_task(self.run_pipeline())
             last_daily_run = now.date()
         # ─────────────────────────────────────────────────────────────────────
