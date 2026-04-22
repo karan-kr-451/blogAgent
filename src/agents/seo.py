@@ -262,7 +262,7 @@ class SEOAgent:
         )
 
         # LLM-enhanced platform content generation
-        platform_content = await self._generate_platform_content(post, keywords, lsi_keywords, reading_time)
+        platform_content = await self._generate_platform_content(post, keywords, lsi_keywords, reading_time, meta_description)
         seo_score = self._calculate_seo_score(optimized_post, seo_metadata, platform_content)
 
         logger.info(
@@ -686,15 +686,16 @@ class SEOAgent:
         post: BlogPost,
         keywords: list[str],
         lsi_keywords: list[str],
-        reading_time: int
+        reading_time: int,
+        meta_description: str
     ) -> PlatformContent:
         """Generate tailored content for every publishing platform (LLM-enhanced)."""
         pc = PlatformContent()
 
         pc.linkedin_post, pc.linkedin_hashtags = await self._generate_linkedin_post(post, keywords, reading_time)
         pc.twitter_thread, pc.twitter_hashtags = await self._generate_twitter_thread(post, keywords)
-        pc.devto_front_matter, pc.devto_tags = self._generate_devto_front_matter(post, keywords)
-        pc.hashnode_front_matter = self._generate_hashnode_front_matter(post, keywords)
+        pc.devto_front_matter, pc.devto_tags = self._generate_devto_front_matter(post, keywords, meta_description)
+        pc.hashnode_front_matter = self._generate_hashnode_front_matter(post, keywords, meta_description)
         pc.medium_canonical_note = self._generate_medium_canonical_note(post)
         pc.short_teaser = await self._generate_short_teaser(post, keywords, reading_time)
 
@@ -886,7 +887,7 @@ What would you add? Drop it in the comments 👇{cta}
         return self._fallback_twitter_thread(post, keywords)
 
     def _generate_devto_front_matter(
-        self, post: BlogPost, keywords: list[str]
+        self, post: BlogPost, keywords: list[str], meta_description: str
     ) -> tuple[str, list[str]]:
         """
         Generate dev.to front matter YAML optimized for views and reach.
@@ -939,7 +940,7 @@ What would you add? Drop it in the comments 👇{cta}
         if hasattr(post, 'metadata') and post.metadata and 'series' in post.metadata:
             lines.append(f"series: {post.metadata['series']}")
             
-        desc = self._generate_meta_description(post.content, keywords)
+        desc = meta_description
         lines.append(f"description: >\n  {desc}")
         lines.append("---")
         
@@ -947,7 +948,7 @@ What would you add? Drop it in the comments 👇{cta}
 
         return front_matter, final_tags
 
-    def _generate_hashnode_front_matter(self, post: BlogPost, keywords: list[str]) -> str:
+    def _generate_hashnode_front_matter(self, post: BlogPost, keywords: list[str], meta_description: str) -> str:
         """
         Generate Hashnode front matter for their GraphQL API / import.
         Hashnode accepts tags as slugs.
@@ -958,7 +959,7 @@ What would you add? Drop it in the comments 👇{cta}
 
         return f"""---
 title: {post.title}
-subtitle: {self._generate_meta_description(post.content, keywords)[:100]}
+subtitle: {meta_description[:100]}
 coverImage: {og_image}
 canonicalUrl: {canonical}
 tags:
