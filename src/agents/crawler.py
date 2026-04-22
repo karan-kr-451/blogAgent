@@ -88,21 +88,32 @@ class CrawlerAgent:
                     "--no-sandbox",
                     "--disable-setuid-sandbox",
                     "--disable-gpu",
-                    "--js-flags=--max-old-space-size=250"
+                    "--js-flags=--max-old-space-size=250",
+                    "--disable-web-security",
+                    "--disable-features=IsolateOrigins,site-per-process"
                 ]
             )
             # Use a realistic user agent
             user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
             self.context = await self.browser.new_context(
                 user_agent=user_agent,
-                viewport={"width": 1920, "height": 1080}
+                viewport={"width": 1280, "height": 720}
             )
             self.page = await self.context.new_page()
+            
+            # Intercept and abort heavy assets to save memory
+            async def block_resources(route):
+                if route.request.resource_type in ["image", "media", "font", "stylesheet"]:
+                    await route.abort()
+                else:
+                    await route.continue_()
+            
+            await self.page.route("**/*", block_resources)
             
             # Set default timeout to 30s
             self.page.set_default_timeout(30000)
             
-            logger.info("Browser initialized with stealth settings", extra={"agent": "CrawlerAgent"})
+            logger.info("Browser initialized with memory-saving stealth settings", extra={"agent": "CrawlerAgent"})
 
     async def crawl(self, start_url: str, goal: str = "find recent articles") -> list[str]:
         """
@@ -601,12 +612,14 @@ Your decision:"""
     async def close(self) -> None:
         """Close browser and clean up resources."""
         try:
+            if hasattr(self, 'llm_client') and self.llm_client:
+                await self.llm_client.aclose()
             if self.context:
                 await self.context.close()
             if self.browser:
                 await self.browser.close()
             if self.playwright:
                 await self.playwright.stop()
-            logger.info("Browser closed", extra={"agent": "CrawlerAgent"})
+            logger.info("Browser and LLM client closed", extra={"agent": "CrawlerAgent"})
         except Exception as e:
-            logger.warning(f"Error closing browser: {e}")
+            logger.warning(f"Error closing resources: {e}")
