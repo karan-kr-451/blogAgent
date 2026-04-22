@@ -213,14 +213,14 @@ Structure the post organically based on the given topic. You are not bound to a 
 ════════════════════════════════════════
 TARGET LENGTH
 ════════════════════════════════════════
-Write 1,200–1,500 words of prose (not counting Mermaid code blocks or the
+Write 1,800–2,500 words of prose (not counting Mermaid code blocks or the
 JSON wrapper). This is non-negotiable — short posts will be rejected and
 regenerated. Every section must be fully developed, not just a sentence or two.
 
 DIAGRAM REQUIREMENTS (AGENT'S DISCRETION)
 ════════════════════════════════════════
 You must INTELLIGENTLY decide how many diagrams to create, what types of diagrams are best suited for the topic, and where to place them organically. 
-Aim for at least 1-3 diagrams, but you decide the exact number based on what makes the article most instructive.
+Aim for best suited diagrams to explain complex things, but you decide the exact number based on what makes the article most instructive.
 
 Available types — you have the full power of Mermaid.js. Pick whatever fits the content perfectly:
   - Architecture / Systems : graph TB, graph TD (Flowchart)
