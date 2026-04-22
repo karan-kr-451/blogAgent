@@ -82,7 +82,14 @@ class CrawlerAgent:
             self.playwright = await async_playwright().start()
             self.browser = await self.playwright.chromium.launch(
                 headless=self.headless,
-                args=["--disable-blink-features=AutomationControlled"]
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--disable-dev-shm-usage",
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-gpu",
+                    "--js-flags=--max-old-space-size=250"
+                ]
             )
             # Use a realistic user agent
             user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"

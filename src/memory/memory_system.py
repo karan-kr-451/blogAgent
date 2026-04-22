@@ -95,7 +95,7 @@ class MemorySystem:
             # fastembed loads the model lazily, but we want to trigger it now
             # default model is BAAI/bge-small-en-v1.5 (384 dims, highly efficient)
             MemorySystem._model_cache = await loop.run_in_executor(
-                None, lambda: TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+                None, lambda: TextEmbedding(model_name="BAAI/bge-small-en-v1.5", threads=1)
             )
             logger.info("Embedding model initialized", extra={"agent": "MemorySystem"})
         

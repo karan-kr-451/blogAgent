@@ -85,7 +85,7 @@ class PipelineScheduler:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     f"{self.api_base_url}/pipeline/trigger",
-                    json={"start_url": self.config.crawler_start_url}
+                    json={} # Send empty payload so the server randomly selects from the companies DB
                 )
                 response.raise_for_status()
                 result = response.json()
